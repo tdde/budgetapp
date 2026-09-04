@@ -52,7 +52,8 @@
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{
-    height:100%;
+    height:100vh;
+    height:100dvh;
     overscroll-behavior:none;
   }
   body{
@@ -68,6 +69,8 @@
     position:fixed;
     inset:0;
     width:100%;
+    height:100vh;
+    height:100dvh;
   }
   .selectable-text, .selectable-text *{
     user-select:text;
@@ -83,10 +86,13 @@
 
   /* ============ LAYOUT SHELL ============ */
   #app{
-    position:absolute;
+    position:fixed;
     inset:0;
+    height:100vh;
+    height:100dvh;
     display:flex;
     flex-direction:column;
+    background:var(--paper);
   }
   header.topbar{
     padding: calc(var(--safe-top) + 14px) 20px 12px;
@@ -122,13 +128,15 @@
 
   /* ============ TAB BAR ============ */
   nav.tabbar{
-    position:absolute;
+    position:fixed;
     left:0; right:0; bottom:0;
+    width:100%;
     display:flex;
     background:var(--paper-raised);
     border-top:1px solid var(--line);
-    padding: 8px 4px calc(8px + var(--safe-bottom));
-    z-index:40;
+    padding: 8px 2px calc(8px + var(--safe-bottom));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index:1000;
   }
   nav.tabbar button{
     flex:1;
@@ -136,13 +144,19 @@
     flex-direction:column;
     align-items:center;
     gap:3px;
-    padding:6px 2px;
+    padding:6px 1px;
     color:var(--ink-faint);
     border-radius:var(--radius-s);
+    user-select:none;
+    -webkit-user-select:none;
   }
   nav.tabbar button.active{ color:var(--accent); }
-  nav.tabbar button svg{ width:22px; height:22px; }
-  nav.tabbar button .lbl{ font-size:10px; font-weight:600; letter-spacing:0.01em; }
+  nav.tabbar button svg{ width:21px; height:21px; }
+  nav.tabbar button .lbl{ font-size:9.5px; font-weight:600; letter-spacing:0.01em; }
+  @media (max-width:380px){
+    nav.tabbar button .lbl{ font-size:8.5px; }
+    nav.tabbar button svg{ width:19px; height:19px; }
+  }
 
   /* ============ CARDS / PRIMITIVES ============ */
   .card{
@@ -387,6 +401,58 @@
 
   .link-btn{ color:var(--accent); font-weight:600; font-size:13px; }
   .hidden{ display:none !important; }
+
+  /* ============ DINING / MEAL PLAN ============ */
+  .meal-slot-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px dashed var(--line); }
+  .meal-slot-row:first-of-type{ border-top:none; }
+  .meal-slot-name{ font-size:14px; font-weight:600; }
+  .meal-slot-btn{
+    padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
+    border:1px solid var(--line-strong); color:var(--ink-dim);
+  }
+  .meal-slot-btn.eaten{ background:var(--green-soft); color:var(--green); border-color:transparent; }
+  .meal-slot-btn.skipped{ background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+
+  .day-schedule-row{ display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px dashed var(--line); }
+  .day-schedule-row:first-of-type{ border-top:none; }
+  .day-schedule-row .day-name{ width:38px; font-size:12px; font-weight:700; color:var(--ink-dim); flex-shrink:0; }
+  .day-schedule-row .chip{ padding:6px 10px; font-size:11px; }
+
+  /* ============ SHOPPING PLANNER ============ */
+  .suggest-row{
+    padding:10px 14px; border-top:1px dashed var(--line); font-size:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--paper-raised);
+  }
+  .suggest-row:first-of-type{ border-top:none; }
+  .suggest-row .suggest-meta{ font-size:11px; color:var(--ink-dim); font-family:var(--font-mono); }
+
+  .shop-row{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-m);
+    background:var(--paper-raised); margin-bottom:9px;
+  }
+  .shop-row.checked{ opacity:0.55; }
+  .shop-row.checked .shop-name{ text-decoration:line-through; }
+  .shop-check{
+    width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line-strong);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .shop-check.checked{ background:var(--accent); border-color:var(--accent); }
+  .shop-check svg{ width:13px; height:13px; stroke:var(--paper); }
+  .shop-main{ flex:1; min-width:0; }
+  .shop-name{ font-size:15px; font-weight:600; }
+  .shop-meta{ font-size:12px; color:var(--ink-dim); margin-top:3px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .shop-price{ font-family:var(--font-mono); font-weight:600; font-size:14px; white-space:nowrap; margin-top:2px; }
+  .urgency-pill{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; }
+  .urgency-pill.asap{ background:var(--red-soft); color:var(--red); }
+  .urgency-pill.byd{ background:var(--accent-soft); color:var(--accent); }
+  .shop-log-btn{
+    margin-top:8px; padding:7px 12px; border-radius:var(--radius-s);
+    background:var(--ink); color:var(--paper); font-size:12px; font-weight:700; display:inline-block;
+  }
+  .badge-pair{ display:flex; gap:10px; }
+  .badge-pair > div{ flex:1; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-m); padding:12px; text-align:center; }
 </style>
 </head>
 <body>
@@ -524,6 +590,135 @@
       </div>
     </section>
 
+    <!-- ===================== DINING DOLLARS + MEAL PLAN ===================== -->
+    <section class="screen" id="screen-dining">
+      <div class="card">
+        <h2>Dining Dollars balance</h2>
+        <div class="row">
+          <div>
+            <div class="stat-label">remaining</div>
+            <div class="stat-big" id="diningRemaining">$0.00</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stat-label">spent</div>
+            <div class="stat-big" id="diningSpent" style="font-size:22px;">$0.00</div>
+          </div>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="diningBar" style="width:0%"></div></div>
+        <div class="two-col" style="margin-top:14px; align-items:end;">
+          <div class="field"><label>Starting balance</label><input type="number" inputmode="decimal" id="diningStartInput" placeholder="0.00"></div>
+          <button class="btn ghost" id="diningSetBalanceBtn">Set balance</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Log a dining transaction</h2>
+        <div class="stack">
+          <div class="field"><label>Name</label><input type="text" id="diningTxName" placeholder="Sandwich, smoothie&hellip;" autocomplete="off"></div>
+          <div class="two-col">
+            <div class="field"><label>Cost</label><input type="number" inputmode="decimal" id="diningTxCost" placeholder="0.00"></div>
+            <div class="field"><label>Venue</label><input type="text" id="diningTxVenue" placeholder="Dining hall, cafe&hellip;" autocomplete="off"></div>
+          </div>
+          <div class="field"><label>Date</label><input type="date" id="diningTxDate"></div>
+          <button class="btn accent block" id="diningTxSubmit">Log transaction</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding-bottom:6px;">
+        <h2>Recent dining transactions</h2>
+        <div id="diningTxList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Meal plan</h2>
+        <div class="badge-pair" style="margin-bottom:12px;">
+          <div>
+            <div class="stat-label">meals left this week</div>
+            <div class="stat-big" id="mealsLeftBadge" style="font-size:26px;">0</div>
+          </div>
+          <div>
+            <div class="stat-label">banked extra meals</div>
+            <div class="stat-big" id="mealsBankedBadge" style="font-size:26px;">0</div>
+          </div>
+        </div>
+        <button class="btn ghost block" id="useBankedMealBtn" style="margin-bottom:16px;">Use 1 banked meal (off-day)</button>
+
+        <h2 style="margin-bottom:8px;">Today &middot; <span id="todayWeekdayLabel"></span></h2>
+        <div id="todayMealsList" style="margin-bottom:14px;"></div>
+
+        <div class="link-btn" id="editScheduleToggle" style="cursor:pointer;">Edit weekly schedule &rsaquo;</div>
+        <div id="scheduleEditor" class="hidden" style="margin-top:10px;"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SHOPPING PLANNER ===================== -->
+    <section class="screen" id="screen-shop">
+      <div class="card">
+        <h2 id="shopFormTitle">Add shopping item</h2>
+        <div class="stack">
+          <div class="field" style="position:relative;">
+            <label>Item name</label>
+            <input type="text" id="shopName" placeholder="Search or type new item&hellip;" autocomplete="off">
+            <div id="shopSuggestions" class="ledger hidden" style="position:absolute; top:100%; left:0; right:0; z-index:10; margin-top:4px; max-height:180px; overflow-y:auto;"></div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Price</label>
+              <input type="number" inputmode="decimal" id="shopPrice" placeholder="0.00">
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="button" class="chip" id="shopUnknownPriceToggle" style="width:100%;">IDK</button>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Store</label>
+              <input type="text" id="shopStore" placeholder="Target, Trader Joe's&hellip;" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="button" class="chip" id="shopAnyStoreToggle" style="width:100%;">Any store</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <div class="chip-row" id="shopCategoryChips"></div>
+          </div>
+          <div class="field">
+            <label>Urgency</label>
+            <div class="chip-row" id="shopUrgencyChips"></div>
+            <input type="date" id="shopByDate" style="margin-top:8px; display:none;">
+          </div>
+          <div class="two-col">
+            <button class="btn ghost" id="shopCancelEditBtn" style="display:none;">Cancel</button>
+            <button class="btn accent block" id="shopSubmitBtn" style="grid-column:1/3;">Add item</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Shopping list</h2>
+        <div class="two-col" style="margin-bottom:10px;">
+          <div class="field">
+            <label>Sort by</label>
+            <select id="shopSortSelect">
+              <option value="urgency">Urgency</option>
+              <option value="store">Store</option>
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Filter store</label>
+            <select id="shopStoreFilter"><option value="">All stores</option></select>
+          </div>
+        </div>
+        <button class="btn ghost sm block" id="shopClearCheckedBtn" style="margin-bottom:12px;">Clear checked items</button>
+        <div id="shopList"></div>
+      </div>
+    </section>
+
     <!-- ===================== DATA / SHARE ===================== -->
     <section class="screen" id="screen-data">
       <div class="card">
@@ -584,6 +779,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
       <span class="lbl">Budget</span>
     </button>
+    <button class="tab-btn" data-screen="dining">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-1.5 1.5-2 3-2 5s.5 3 2 4v9"/></svg>
+      <span class="lbl">Dining</span>
+    </button>
+    <button class="tab-btn" data-screen="shop">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8h12l-1 12H7L6 8zM9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span class="lbl">Shop</span>
+    </button>
     <button class="tab-btn" data-screen="data">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       <span class="lbl">Share</span>
@@ -632,6 +835,17 @@ const DEFAULT_CATEGORIES = [
   {name:"Bills", color:"#3B6E8F"},
   {name:"Other", color:"#726C60"}
 ];
+const SHOPPING_CATEGORIES = ["Groceries","Household","Tech","Personal Care","Other"];
+const PALETTE = ["#B4632B","#3F6B4E","#7A6E4E","#8A4B7A","#3B6E8F","#B33B2C","#6B7A3B","#A0522D"];
+const WEEKDAY_KEYS = ["sun","mon","tue","wed","thu","fri","sat"];
+const WEEKDAY_LABELS = {sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat"};
+function defaultSchedule(){
+  // Reasonable starting default: lunch + dinner Mon-Thu
+  const sched = {};
+  WEEKDAY_KEYS.forEach(k=>{ sched[k] = {b:false,l:false,d:false}; });
+  ["mon","tue","wed","thu"].forEach(k=>{ sched[k].l = true; sched[k].d = true; });
+  return sched;
+}
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
@@ -643,10 +857,25 @@ function loadState(){
       parsed.expenses = parsed.expenses || [];
       parsed.categories = parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES.slice();
       parsed.budgets = parsed.budgets || [];
+      parsed.diningDollars = parsed.diningDollars || { startingBalance:0, transactions:[] };
+      parsed.mealPlan = parsed.mealPlan || { schedule: defaultSchedule(), log:{}, extraBanked:0 };
+      parsed.mealPlan.schedule = parsed.mealPlan.schedule || defaultSchedule();
+      parsed.mealPlan.log = parsed.mealPlan.log || {};
+      parsed.mealPlan.extraBanked = parsed.mealPlan.extraBanked || 0;
+      parsed.shoppingItems = parsed.shoppingItems || [];
+      parsed.itemCatalog = parsed.itemCatalog || [];
       return parsed;
     }
   }catch(e){ console.warn("load failed", e); }
-  return { expenses:[], categories: DEFAULT_CATEGORIES.slice(), budgets:[] };
+  return {
+    expenses:[],
+    categories: DEFAULT_CATEGORIES.slice(),
+    budgets:[],
+    diningDollars: { startingBalance:0, transactions:[] },
+    mealPlan: { schedule: defaultSchedule(), log:{}, extraBanked:0 },
+    shoppingItems:[],
+    itemCatalog:[]
+  };
 }
 let state = loadState();
 function saveState(){
@@ -751,7 +980,7 @@ function sumExpenses(list){
 }
 
 /* ================= NAVIGATION ================= */
-const screens = ["home","list","stats","budget","data"];
+const screens = ["home","list","stats","budget","dining","shop","data"];
 function showScreen(name){
   screens.forEach(s=>{
     document.getElementById("screen-"+s).classList.toggle("active", s===name);
@@ -762,6 +991,8 @@ function showScreen(name){
   if(name==="list") renderList();
   if(name==="stats") renderStats();
   if(name==="budget") renderBudget();
+  if(name==="dining") renderDining();
+  if(name==="shop") renderShop();
   if(name==="data") renderData();
   if(name==="home") renderHome();
 }
@@ -1165,6 +1396,505 @@ function renderBudget(){
   }
 }
 
+/* ================= DINING DOLLARS + MEAL PLAN ================= */
+function diningTxSum(){
+  return state.diningDollars.transactions.reduce((s,t)=>s+Number(t.cost||0),0);
+}
+function diningRemainingAmt(){
+  return (state.diningDollars.startingBalance||0) - diningTxSum();
+}
+
+document.getElementById("diningSetBalanceBtn").addEventListener("click", ()=>{
+  const v = parseFloat(document.getElementById("diningStartInput").value);
+  if(isNaN(v) || v<0){ toast("Enter a valid balance"); return; }
+  state.diningDollars.startingBalance = v;
+  saveState();
+  toast("Balance set");
+  renderDining();
+});
+
+document.getElementById("diningTxSubmit").addEventListener("click", ()=>{
+  const name = document.getElementById("diningTxName").value.trim();
+  const cost = parseFloat(document.getElementById("diningTxCost").value);
+  const venue = document.getElementById("diningTxVenue").value.trim();
+  const date = document.getElementById("diningTxDate").value || todayISO();
+  if(!name){ toast("Give it a name"); return; }
+  if(isNaN(cost) || cost<=0){ toast("Enter a cost"); return; }
+  state.diningDollars.transactions.push({id:uid(), name, cost, venue, date});
+  saveState();
+  document.getElementById("diningTxName").value = "";
+  document.getElementById("diningTxCost").value = "";
+  document.getElementById("diningTxVenue").value = "";
+  document.getElementById("diningTxDate").value = todayISO();
+  toast("Logged");
+  renderDining();
+});
+
+function renderDiningTxList(){
+  const list = state.diningDollars.transactions.slice()
+    .sort((a,b)=> (b.date+(b.id||"")).localeCompare(a.date+(a.id||"")))
+    .slice(0,20);
+  const wrap = document.getElementById("diningTxList");
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state">No dining transactions yet.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(t=>`
+    <div class="tx-row" data-id="${t.id}">
+      <div class="tx-main">
+        <div class="tx-name">${escapeHtml(t.name)}</div>
+        <div class="tx-meta">${escapeHtml(t.venue||"Dining hall")} &middot; ${fmtDateShort(t.date)}</div>
+      </div>
+      <div class="tx-price">${money(t.cost)}</div>
+      <button class="link-btn" data-del-dining="${t.id}" style="margin-left:10px;">Remove</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-del-dining]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      state.diningDollars.transactions = state.diningDollars.transactions.filter(t=>t.id!==btn.dataset.delDining);
+      saveState();
+      toast("Removed");
+      renderDining();
+    });
+  });
+}
+
+function computeMealWeekStats(todayIso){
+  const ws = startOfWeek(todayIso), we = endOfWeek(todayIso);
+  let scheduled=0, eaten=0, skipped=0;
+  let cursor = ws, guard = 0;
+  while(cursor<=we && guard<10){
+    const wk = WEEKDAY_KEYS[parseDate(cursor).getDay()];
+    const sched = state.mealPlan.schedule[wk];
+    const log = state.mealPlan.log[cursor] || {};
+    ["b","l","d"].forEach(slot=>{
+      if(sched[slot]){
+        scheduled++;
+        if(log[slot]==="eaten") eaten++;
+        else if(log[slot]==="skipped") skipped++;
+      }
+    });
+    cursor = addDaysISO(cursor,1);
+    guard++;
+  }
+  return { scheduled, eaten, skipped, mealsLeftThisWeek: Math.max(0, scheduled-eaten-skipped) };
+}
+
+function cycleMealStatus(date, slot){
+  state.mealPlan.log[date] = state.mealPlan.log[date] || {};
+  const cur = state.mealPlan.log[date][slot] || "pending";
+  let next;
+  if(cur==="pending") next = "eaten";
+  else if(cur==="eaten") next = "skipped";
+  else next = null;
+  if(cur==="skipped" && next!=="skipped"){ state.mealPlan.extraBanked = Math.max(0, state.mealPlan.extraBanked-1); }
+  if(next==="skipped"){ state.mealPlan.extraBanked++; }
+  if(next===null) delete state.mealPlan.log[date][slot];
+  else state.mealPlan.log[date][slot] = next;
+  saveState();
+  renderMealPlan();
+}
+
+document.getElementById("useBankedMealBtn").addEventListener("click", ()=>{
+  if(state.mealPlan.extraBanked<=0){ toast("No banked meals yet"); return; }
+  state.mealPlan.extraBanked--;
+  saveState();
+  toast("Used a banked meal");
+  renderMealPlan();
+});
+
+let scheduleEditorOpen = false;
+document.getElementById("editScheduleToggle").addEventListener("click", ()=>{
+  scheduleEditorOpen = !scheduleEditorOpen;
+  document.getElementById("scheduleEditor").classList.toggle("hidden", !scheduleEditorOpen);
+  document.getElementById("editScheduleToggle").innerHTML = scheduleEditorOpen ? "Hide weekly schedule &lsaquo;" : "Edit weekly schedule &rsaquo;";
+  renderScheduleEditor();
+});
+
+function renderScheduleEditor(){
+  if(!scheduleEditorOpen) return;
+  const wrap = document.getElementById("scheduleEditor");
+  const totalPerWeek = WEEKDAY_KEYS.reduce((s,k)=>{
+    const d = state.mealPlan.schedule[k];
+    return s + (d.b?1:0) + (d.l?1:0) + (d.d?1:0);
+  },0);
+  wrap.innerHTML = WEEKDAY_KEYS.map(k=>{
+    const sched = state.mealPlan.schedule[k];
+    return `<div class="day-schedule-row">
+      <div class="day-name">${WEEKDAY_LABELS[k]}</div>
+      <button type="button" class="chip ${sched.b?'active':''}" data-day="${k}" data-slot="b">B</button>
+      <button type="button" class="chip ${sched.l?'active':''}" data-day="${k}" data-slot="l">L</button>
+      <button type="button" class="chip ${sched.d?'active':''}" data-day="${k}" data-slot="d">D</button>
+    </div>`;
+  }).join("") + `<div class="stat-sub" style="margin-top:10px;">${totalPerWeek} meals scheduled per week</div>`;
+  wrap.querySelectorAll("[data-day]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const day = btn.dataset.day, slot = btn.dataset.slot;
+      state.mealPlan.schedule[day][slot] = !state.mealPlan.schedule[day][slot];
+      saveState();
+      renderScheduleEditor();
+      renderMealPlan();
+    });
+  });
+}
+
+function renderMealPlan(){
+  const today = todayISO();
+  const stats = computeMealWeekStats(today);
+  document.getElementById("mealsLeftBadge").textContent = stats.mealsLeftThisWeek;
+  document.getElementById("mealsBankedBadge").textContent = state.mealPlan.extraBanked;
+
+  const weekdayKey = WEEKDAY_KEYS[parseDate(today).getDay()];
+  document.getElementById("todayWeekdayLabel").textContent = WEEKDAY_LABELS[weekdayKey];
+  const sched = state.mealPlan.schedule[weekdayKey];
+  const log = state.mealPlan.log[today] || {};
+  const slots = [["b","Breakfast"],["l","Lunch"],["d","Dinner"]];
+  const scheduledSlots = slots.filter(([k])=>sched[k]);
+  const todayWrap = document.getElementById("todayMealsList");
+  if(!scheduledSlots.length){
+    todayWrap.innerHTML = '<div class="empty-state">No meals scheduled today.</div>';
+  } else {
+    todayWrap.innerHTML = scheduledSlots.map(([k,label])=>{
+      const status = log[k] || "pending";
+      const btnLabel = status==="pending" ? "Mark" : status==="eaten" ? "Eaten \u2713" : "Skipped \u2192 banked";
+      return `<div class="meal-slot-row">
+        <div class="meal-slot-name">${label}</div>
+        <button class="meal-slot-btn ${status}" data-meal-slot="${k}">${btnLabel}</button>
+      </div>`;
+    }).join("");
+    todayWrap.querySelectorAll("[data-meal-slot]").forEach(btn=>{
+      btn.addEventListener("click", ()=> cycleMealStatus(today, btn.dataset.mealSlot));
+    });
+  }
+  renderScheduleEditor();
+}
+
+function renderDining(){
+  const remaining = diningRemainingAmt();
+  const spent = diningTxSum();
+  document.getElementById("diningRemaining").textContent = money(remaining);
+  document.getElementById("diningSpent").textContent = money(spent);
+  const bal = state.diningDollars.startingBalance || 0;
+  const pct = bal>0 ? Math.min(100, spent/bal*100) : 0;
+  const bar = document.getElementById("diningBar");
+  bar.style.width = pct+"%";
+  bar.classList.toggle("over", spent>bal && bal>0);
+  document.getElementById("diningStartInput").value = state.diningDollars.startingBalance || "";
+  if(!document.getElementById("diningTxDate").value) document.getElementById("diningTxDate").value = todayISO();
+  renderDiningTxList();
+  renderMealPlan();
+}
+
+/* ================= SHOPPING PLANNER ================= */
+let shopEditingId = null;
+let shopUnknownPrice = false;
+let shopAnyStore = false;
+let shopCategory = SHOPPING_CATEGORIES[0];
+let shopUrgency = "none";
+
+function renderStringChips(container, options, selected, onSelect){
+  container.innerHTML = "";
+  options.forEach(opt=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (opt===selected ? " active" : "");
+    chip.textContent = opt;
+    chip.addEventListener("click", ()=>onSelect(opt));
+    container.appendChild(chip);
+  });
+}
+function renderShopCategoryChips(){
+  renderStringChips(document.getElementById("shopCategoryChips"), SHOPPING_CATEGORIES, shopCategory, (val)=>{
+    shopCategory = val;
+    renderShopCategoryChips();
+  });
+}
+function renderShopUrgencyChips(){
+  const opts = [["none","None"],["asap","Buy ASAP"],["by","By date"]];
+  const container = document.getElementById("shopUrgencyChips");
+  container.innerHTML = "";
+  opts.forEach(([val,label])=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (shopUrgency===val ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", ()=>{
+      shopUrgency = val;
+      document.getElementById("shopByDate").style.display = val==="by" ? "block" : "none";
+      renderShopUrgencyChips();
+    });
+    container.appendChild(chip);
+  });
+}
+function shopCategoryColor(name){
+  const idx = SHOPPING_CATEGORIES.indexOf(name);
+  return PALETTE[idx>=0 ? idx%PALETTE.length : 0];
+}
+
+document.getElementById("shopUnknownPriceToggle").addEventListener("click", ()=>{
+  shopUnknownPrice = !shopUnknownPrice;
+  document.getElementById("shopUnknownPriceToggle").classList.toggle("active", shopUnknownPrice);
+  const priceInput = document.getElementById("shopPrice");
+  priceInput.disabled = shopUnknownPrice;
+  if(shopUnknownPrice) priceInput.value = "";
+});
+document.getElementById("shopAnyStoreToggle").addEventListener("click", ()=>{
+  shopAnyStore = !shopAnyStore;
+  document.getElementById("shopAnyStoreToggle").classList.toggle("active", shopAnyStore);
+  const storeInput = document.getElementById("shopStore");
+  storeInput.disabled = shopAnyStore;
+  if(shopAnyStore) storeInput.value = "";
+});
+
+document.getElementById("shopName").addEventListener("input", ()=>{
+  const q = document.getElementById("shopName").value.trim().toLowerCase();
+  const wrap = document.getElementById("shopSuggestions");
+  if(!q){ wrap.classList.add("hidden"); wrap.innerHTML=""; return; }
+  const matches = state.itemCatalog.filter(c=>c.name.toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){ wrap.classList.add("hidden"); wrap.innerHTML=""; return; }
+  wrap.innerHTML = matches.map(c=>`<div class="suggest-row" data-catalog-key="${escapeHtml(c.key)}">
+    <span>${escapeHtml(c.name)}</span>
+    <span class="suggest-meta">${c.store?escapeHtml(c.store)+" \u00b7 ":""}${c.price!=null?money(c.price):""}</span>
+  </div>`).join("");
+  wrap.classList.remove("hidden");
+  wrap.querySelectorAll("[data-catalog-key]").forEach(row=>{
+    row.addEventListener("click", ()=>{
+      const entry = state.itemCatalog.find(c=>c.key===row.dataset.catalogKey);
+      if(entry) applyCatalogEntry(entry);
+      wrap.classList.add("hidden");
+    });
+  });
+});
+document.getElementById("shopName").addEventListener("blur", ()=>{
+  setTimeout(()=> document.getElementById("shopSuggestions").classList.add("hidden"), 150);
+});
+
+function applyCatalogEntry(entry){
+  document.getElementById("shopName").value = entry.name;
+  if(entry.price!=null){
+    shopUnknownPrice = false;
+    document.getElementById("shopUnknownPriceToggle").classList.remove("active");
+    document.getElementById("shopPrice").disabled = false;
+    document.getElementById("shopPrice").value = entry.price;
+  }
+  if(entry.store){
+    shopAnyStore = false;
+    document.getElementById("shopAnyStoreToggle").classList.remove("active");
+    document.getElementById("shopStore").disabled = false;
+    document.getElementById("shopStore").value = entry.store;
+  }
+  if(entry.category && SHOPPING_CATEGORIES.includes(entry.category)){
+    shopCategory = entry.category;
+    renderShopCategoryChips();
+  }
+}
+
+function upsertCatalog(item){
+  const key = item.name.trim().toLowerCase();
+  if(!key) return;
+  let entry = state.itemCatalog.find(c=>c.key===key);
+  if(!entry){ entry = {key, name:item.name.trim()}; state.itemCatalog.push(entry); }
+  entry.name = item.name.trim();
+  if(!item.unknownPrice && item.price!=null && !isNaN(item.price)) entry.price = item.price;
+  if(!item.unknownStore && item.store) entry.store = item.store;
+  if(item.category) entry.category = item.category;
+}
+
+document.getElementById("shopSubmitBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("shopName").value.trim();
+  if(!name){ toast("Give it a name"); return; }
+  const priceRaw = document.getElementById("shopPrice").value;
+  const price = shopUnknownPrice ? null : parseFloat(priceRaw);
+  if(!shopUnknownPrice && (isNaN(price) || price<0)){ toast("Enter a price or mark IDK"); return; }
+  const store = shopAnyStore ? "" : document.getElementById("shopStore").value.trim();
+  const byDate = shopUrgency==="by" ? (document.getElementById("shopByDate").value || null) : null;
+  if(shopUrgency==="by" && !byDate){ toast("Pick a date"); return; }
+
+  const item = {
+    name,
+    price: shopUnknownPrice ? null : price,
+    unknownPrice: shopUnknownPrice,
+    store,
+    unknownStore: shopAnyStore,
+    category: shopCategory,
+    urgency: shopUrgency,
+    byDate
+  };
+
+  if(shopEditingId){
+    const idx = state.shoppingItems.findIndex(i=>i.id===shopEditingId);
+    if(idx>-1){ state.shoppingItems[idx] = Object.assign({}, state.shoppingItems[idx], item); }
+    toast("Item updated");
+  } else {
+    state.shoppingItems.push(Object.assign({id:uid(), checked:false, purchasedExpenseId:null}, item));
+    toast("Added to list");
+  }
+  upsertCatalog(item);
+  saveState();
+  resetShopForm();
+  renderShop();
+});
+
+document.getElementById("shopCancelEditBtn").addEventListener("click", ()=>{
+  resetShopForm();
+  renderShop();
+});
+
+function resetShopForm(){
+  shopEditingId = null;
+  document.getElementById("shopName").value = "";
+  document.getElementById("shopPrice").value = "";
+  document.getElementById("shopPrice").disabled = false;
+  document.getElementById("shopStore").value = "";
+  document.getElementById("shopStore").disabled = false;
+  shopUnknownPrice = false;
+  shopAnyStore = false;
+  document.getElementById("shopUnknownPriceToggle").classList.remove("active");
+  document.getElementById("shopAnyStoreToggle").classList.remove("active");
+  shopCategory = SHOPPING_CATEGORIES[0];
+  shopUrgency = "none";
+  document.getElementById("shopByDate").value = "";
+  document.getElementById("shopByDate").style.display = "none";
+  renderShopCategoryChips();
+  renderShopUrgencyChips();
+  document.getElementById("shopFormTitle").textContent = "Add shopping item";
+  document.getElementById("shopSubmitBtn").textContent = "Add item";
+  document.getElementById("shopSubmitBtn").style.gridColumn = "1/3";
+  document.getElementById("shopCancelEditBtn").style.display = "none";
+}
+
+function loadItemIntoForm(item){
+  shopEditingId = item.id;
+  document.getElementById("shopName").value = item.name;
+  shopUnknownPrice = !!item.unknownPrice;
+  document.getElementById("shopUnknownPriceToggle").classList.toggle("active", shopUnknownPrice);
+  document.getElementById("shopPrice").disabled = shopUnknownPrice;
+  document.getElementById("shopPrice").value = item.price!=null ? item.price : "";
+  shopAnyStore = !!item.unknownStore;
+  document.getElementById("shopAnyStoreToggle").classList.toggle("active", shopAnyStore);
+  document.getElementById("shopStore").disabled = shopAnyStore;
+  document.getElementById("shopStore").value = item.store || "";
+  shopCategory = item.category || SHOPPING_CATEGORIES[0];
+  shopUrgency = item.urgency || "none";
+  document.getElementById("shopByDate").value = item.byDate || "";
+  document.getElementById("shopByDate").style.display = shopUrgency==="by" ? "block" : "none";
+  renderShopCategoryChips();
+  renderShopUrgencyChips();
+  document.getElementById("shopFormTitle").textContent = "Edit item";
+  document.getElementById("shopSubmitBtn").textContent = "Save changes";
+  document.getElementById("shopSubmitBtn").style.gridColumn = "2/3";
+  document.getElementById("shopCancelEditBtn").style.display = "flex";
+  const mainEl = document.querySelector("main");
+  if(mainEl) mainEl.scrollTop = 0;
+}
+
+document.getElementById("shopSortSelect").addEventListener("change", renderShop);
+document.getElementById("shopStoreFilter").addEventListener("change", renderShop);
+document.getElementById("shopClearCheckedBtn").addEventListener("click", ()=>{
+  state.shoppingItems = state.shoppingItems.filter(i=>!i.checked);
+  saveState();
+  toast("Cleared");
+  renderShop();
+});
+
+function urgencyRank(item){
+  if(item.urgency==="asap") return 0;
+  if(item.urgency==="by") return 1;
+  return 2;
+}
+
+function renderShop(){
+  const storeFilterSel = document.getElementById("shopStoreFilter");
+  const stores = Array.from(new Set(state.shoppingItems.map(i=>i.store).filter(Boolean))).sort();
+  const currentFilter = storeFilterSel.value;
+  storeFilterSel.innerHTML = '<option value="">All stores</option>' + stores.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  storeFilterSel.value = stores.includes(currentFilter) ? currentFilter : "";
+
+  let items = state.shoppingItems.slice();
+  const filterStore = storeFilterSel.value;
+  if(filterStore) items = items.filter(i=>i.store===filterStore);
+
+  const sortBy = document.getElementById("shopSortSelect").value;
+  items.sort((a,b)=>{
+    if(sortBy==="urgency"){
+      const r = urgencyRank(a)-urgencyRank(b);
+      if(r!==0) return r;
+      if(a.urgency==="by" && b.urgency==="by") return (a.byDate||"").localeCompare(b.byDate||"");
+      return a.name.localeCompare(b.name);
+    }
+    if(sortBy==="store") return (a.store||"zzz").localeCompare(b.store||"zzz") || a.name.localeCompare(b.name);
+    if(sortBy==="name") return a.name.localeCompare(b.name);
+    if(sortBy==="price"){
+      const pa = a.price==null ? Infinity : a.price;
+      const pb = b.price==null ? Infinity : b.price;
+      return pa-pb;
+    }
+    return 0;
+  });
+  items.sort((a,b)=> (a.checked===b.checked) ? 0 : (a.checked ? 1 : -1));
+
+  const wrap = document.getElementById("shopList");
+  if(!items.length){
+    wrap.innerHTML = '<div class="empty-state">Nothing on your list yet.</div>';
+    return;
+  }
+  wrap.innerHTML = items.map(item=>{
+    const urgencyBadge = item.urgency==="asap" ? '<span class="urgency-pill asap">ASAP</span>'
+      : (item.urgency==="by" && item.byDate) ? `<span class="urgency-pill byd">By ${fmtDateShort(item.byDate)}</span>` : "";
+    const priceText = (item.unknownPrice || item.price==null) ? "Price TBD" : money(item.price);
+    const storeText = (item.unknownStore || !item.store) ? "Any store" : escapeHtml(item.store);
+    const logBtn = (item.checked && !item.purchasedExpenseId) ? `<div class="shop-log-btn" data-log-expense="${item.id}">Log as expense &rsaquo;</div>` : "";
+    return `<div class="shop-row ${item.checked?'checked':''}" data-id="${item.id}">
+      <div class="shop-check ${item.checked?'checked':''}" data-shop-check="${item.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="shop-main" data-shop-edit="${item.id}">
+        <div class="shop-name">${escapeHtml(item.name)}</div>
+        <div class="shop-meta">
+          <span class="tx-dot" style="background:${shopCategoryColor(item.category)}"></span>${escapeHtml(item.category)}
+          &middot; ${storeText}
+          ${urgencyBadge}
+        </div>
+        <div class="shop-price">${priceText}</div>
+        ${logBtn}
+      </div>
+    </div>`;
+  }).join("");
+
+  wrap.querySelectorAll("[data-shop-check]").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const id = el.dataset.shopCheck;
+      const it = state.shoppingItems.find(i=>i.id===id);
+      if(it){ it.checked = !it.checked; saveState(); renderShop(); }
+    });
+  });
+  wrap.querySelectorAll("[data-shop-edit]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const id = el.dataset.shopEdit;
+      const it = state.shoppingItems.find(i=>i.id===id);
+      if(it) loadItemIntoForm(it);
+    });
+  });
+  wrap.querySelectorAll("[data-log-expense]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.logExpense;
+      const it = state.shoppingItems.find(i=>i.id===id);
+      if(!it) return;
+      if(it.unknownPrice || it.price==null){ toast("Set a price first"); return; }
+      if(!state.categories.some(c=>c.name===it.category)){
+        const color = PALETTE[state.categories.length % PALETTE.length];
+        state.categories.push({name:it.category, color});
+      }
+      const exp = addExpense({ name:it.name, price:it.price, category:it.category, date: todayISO(), time: nowTimeISO() });
+      it.purchasedExpenseId = exp.id;
+      saveState();
+      toast("Logged as expense");
+      renderShop();
+      renderHome();
+    });
+  });
+}
+
 /* ================= CATEGORY MANAGER ================= */
 function renderCategoryManager(){
   const wrap = document.getElementById("categoryManager");
@@ -1187,7 +1917,6 @@ function renderCategoryManager(){
     });
   });
 }
-const PALETTE = ["#B4632B","#3F6B4E","#7A6E4E","#8A4B7A","#3B6E8F","#B33B2C","#6B7A3B","#A0522D"];
 document.getElementById("addCatBtn").addEventListener("click", ()=>{
   const input = document.getElementById("newCatName");
   const name = input.value.trim();
@@ -1363,6 +2092,28 @@ document.getElementById("importFileInput").addEventListener("change", (ev)=>{
       (incoming.budgets||[]).forEach(b=>{
         if(!existingBudgetIds.has(b.id)) state.budgets.push(b);
       });
+      if(incoming.diningDollars){
+        if(typeof incoming.diningDollars.startingBalance === "number"){
+          state.diningDollars.startingBalance = incoming.diningDollars.startingBalance;
+        }
+        const existingTxIds = new Set(state.diningDollars.transactions.map(t=>t.id));
+        (incoming.diningDollars.transactions||[]).forEach(t=>{
+          if(!existingTxIds.has(t.id)) state.diningDollars.transactions.push(t);
+        });
+      }
+      if(incoming.mealPlan){
+        if(incoming.mealPlan.schedule) state.mealPlan.schedule = incoming.mealPlan.schedule;
+        if(incoming.mealPlan.log) state.mealPlan.log = Object.assign({}, state.mealPlan.log, incoming.mealPlan.log);
+        if(typeof incoming.mealPlan.extraBanked === "number") state.mealPlan.extraBanked = incoming.mealPlan.extraBanked;
+      }
+      const existingShopIds = new Set(state.shoppingItems.map(i=>i.id));
+      (incoming.shoppingItems||[]).forEach(i=>{
+        if(!existingShopIds.has(i.id)) state.shoppingItems.push(i);
+      });
+      const existingCatalogKeys = new Set(state.itemCatalog.map(c=>c.key));
+      (incoming.itemCatalog||[]).forEach(c=>{
+        if(!existingCatalogKeys.has(c.key)) state.itemCatalog.push(c);
+      });
       saveState();
       toast("Imported "+added+" item"+(added===1?"":"s"));
       renderHome(); renderData();
@@ -1383,7 +2134,9 @@ function init(){
   setTodayLabel();
   document.getElementById("qaDate").value = todayISO();
   document.getElementById("qaTime").value = nowTimeISO();
+  document.getElementById("diningTxDate").value = todayISO();
   refreshQaChips();
+  resetShopForm();
   renderHome();
 }
 init();
