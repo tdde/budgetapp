@@ -617,9 +617,8 @@
           <div class="field"><label>Name</label><input type="text" id="diningTxName" placeholder="Sandwich, smoothie&hellip;" autocomplete="off"></div>
           <div class="two-col">
             <div class="field"><label>Cost</label><input type="number" inputmode="decimal" id="diningTxCost" placeholder="0.00"></div>
-            <div class="field"><label>Venue</label><input type="text" id="diningTxVenue" placeholder="Dining hall, cafe&hellip;" autocomplete="off"></div>
+            <div class="field"><label>Date</label><input type="date" id="diningTxDate"></div>
           </div>
-          <div class="field"><label>Date</label><input type="date" id="diningTxDate"></div>
           <button class="btn accent block" id="diningTxSubmit">Log transaction</button>
         </div>
       </div>
@@ -1416,15 +1415,13 @@ document.getElementById("diningSetBalanceBtn").addEventListener("click", ()=>{
 document.getElementById("diningTxSubmit").addEventListener("click", ()=>{
   const name = document.getElementById("diningTxName").value.trim();
   const cost = parseFloat(document.getElementById("diningTxCost").value);
-  const venue = document.getElementById("diningTxVenue").value.trim();
   const date = document.getElementById("diningTxDate").value || todayISO();
   if(!name){ toast("Give it a name"); return; }
   if(isNaN(cost) || cost<=0){ toast("Enter a cost"); return; }
-  state.diningDollars.transactions.push({id:uid(), name, cost, venue, date});
+  state.diningDollars.transactions.push({id:uid(), name, cost, date});
   saveState();
   document.getElementById("diningTxName").value = "";
   document.getElementById("diningTxCost").value = "";
-  document.getElementById("diningTxVenue").value = "";
   document.getElementById("diningTxDate").value = todayISO();
   toast("Logged");
   renderDining();
@@ -1443,7 +1440,7 @@ function renderDiningTxList(){
     <div class="tx-row" data-id="${t.id}">
       <div class="tx-main">
         <div class="tx-name">${escapeHtml(t.name)}</div>
-        <div class="tx-meta">${escapeHtml(t.venue||"Dining hall")} &middot; ${fmtDateShort(t.date)}</div>
+        <div class="tx-meta">${fmtDateShort(t.date)}</div>
       </div>
       <div class="tx-price">${money(t.cost)}</div>
       <button class="link-btn" data-del-dining="${t.id}" style="margin-left:10px;">Remove</button>
