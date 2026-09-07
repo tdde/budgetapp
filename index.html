@@ -160,12 +160,15 @@
   /* ============ TAB BAR ============ */
   nav.tabbar{
     position:fixed;
-    left:0; right:0; bottom:0;
+    bottom:0;
+    left:0;
+    right:0;
     width:100%;
     display:flex;
     background-color:var(--paper-raised);
     border-top:1px solid var(--line);
-    padding: 8px 2px max(8px, env(safe-area-inset-bottom));
+    padding: 8px 2px 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
     z-index:1000;
   }
   nav.tabbar button{
@@ -255,6 +258,39 @@
     font-weight:600;
   }
   .chip.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .gear-btn{ font-size:18px; padding:2px 4px; line-height:1; color:var(--ink-dim); }
+  .fab-add{
+    position:fixed;
+    right:18px;
+    bottom: calc(96px + var(--safe-bottom));
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    padding:13px 18px;
+    border-radius:999px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    z-index:40;
+  }
+  .select-check{
+    width:20px; height:20px;
+    border-radius:6px;
+    border:1.5px solid var(--line-strong);
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-right:2px;
+  }
+  .select-check.checked{ background:var(--accent); border-color:var(--accent); }
+  .select-check svg{ width:12px; height:12px; stroke:var(--paper); }
+  .batch-bar{
+    position:sticky; top:0; z-index:5;
+    display:flex; gap:6px; flex-wrap:wrap;
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m);
+    padding:10px; margin-bottom:12px;
+  }
+  .tag-pill-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
 
   /* Receipt-style transaction list */
   .ledger{
@@ -582,6 +618,15 @@
   .ingredient-row{ display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px dashed var(--line); font-size:13px; }
   .ingredient-row:first-of-type{ border-top:none; }
   .ingredient-row input[type="text"]{ flex:1; background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:8px 10px; font-size:13px; color:var(--ink); }
+  .ingredient-row .ing-summary{ flex:1; cursor:pointer; }
+  .ingredient-row .ing-summary .ing-meta{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; }
+  .recipe-tag-row{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 10px; }
+  .mealprep-slot{ border-top:1px dashed var(--line); padding:10px 0; }
+  .mealprep-slot:first-of-type{ border-top:none; }
+  .mealprep-slot-label{ font-size:12px; font-weight:700; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; }
+  .mealprep-entry{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-s); margin-bottom:6px; }
+  .mealprep-entry.completed{ opacity:.55; }
+  .mealprep-entry .name{ font-weight:600; font-size:13.5px; }
 
   /* ============ DINING VENUES / FAVORITES ============ */
   .venue-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
@@ -735,7 +780,10 @@
     <!-- ===================== DINING DOLLARS + MEAL PLAN ===================== -->
     <section class="screen" id="screen-dining">
       <div class="card">
-        <h2>Dining Dollars balance</h2>
+        <div class="row" style="align-items:flex-start;">
+          <h2 style="margin:0;">Dining Dollars balance</h2>
+          <button type="button" class="gear-btn" id="diningSettingsBtn" aria-label="Dining settings">&#9881;&#65039;</button>
+        </div>
         <div class="row">
           <div>
             <div class="stat-label">remaining</div>
@@ -747,14 +795,7 @@
           </div>
         </div>
         <div class="bar-track"><div class="bar-fill" id="diningBar" style="width:0%"></div></div>
-        <div class="two-col" style="margin-top:14px; align-items:end;">
-          <div class="field"><label>Starting balance</label><input type="number" inputmode="decimal" id="diningStartInput" placeholder="0.00"></div>
-          <button class="btn ghost" id="diningSetBalanceBtn">Set balance</button>
-        </div>
-        <div class="two-col" style="margin-top:10px; align-items:end;">
-          <div class="field"><label>Semester ends</label><input type="date" id="diningSemesterEnd"></div>
-          <button class="btn ghost" id="diningSetSemesterBtn">Save</button>
-        </div>
+        <div class="stat-sub" id="diningSettingsSummary" style="margin-top:10px;"></div>
       </div>
 
       <div class="card">
@@ -885,7 +926,16 @@
             <select id="shopStoreFilter"><option value="">All stores</option></select>
           </div>
         </div>
-        <button class="btn ghost sm block" id="shopClearCheckedBtn" style="margin-bottom:12px;">Clear checked items</button>
+        <div class="two-col" style="margin-bottom:12px;">
+          <button class="btn ghost sm" id="shopClearCheckedBtn">Clear checked items</button>
+          <button class="btn ghost sm" id="shopToggleSelectMode">Select</button>
+        </div>
+        <div class="batch-bar hidden" id="shopBatchBar">
+          <span class="stat-sub" id="shopBatchCount" style="flex:1 0 100%;">0 selected</span>
+          <button class="btn ghost sm" data-batch-owner="me" style="flex:1;">I'm buying</button>
+          <button class="btn ghost sm" data-batch-owner="roommate" style="flex:1;">Roommate buying</button>
+          <button class="btn ghost sm" data-batch-owner="split" style="flex:1;">Split cost</button>
+        </div>
         <div id="shopList"></div>
       </div>
     </section>
@@ -1016,41 +1066,11 @@
     <!-- ===================== CHECKLIST ===================== -->
     <section class="screen" id="screen-checklist">
       <div class="card">
-        <h2 id="checkFormTitle">New reminder</h2>
-        <div class="stack">
-          <div class="field"><label>Title</label><input type="text" id="checkTitle" placeholder="Renew parking pass&hellip;" autocomplete="off"></div>
-          <div class="field">
-            <label>Subtasks</label>
-            <div id="checkSubtasksEditor" class="stack"></div>
-            <button class="btn ghost sm" id="checkAddSubtaskBtn" style="margin-top:6px;">+ Add subtask</button>
-          </div>
-          <div class="field">
-            <label>Urgency</label>
-            <div class="chip-row" id="checkUrgencyChips"></div>
-          </div>
-          <div class="two-col">
-            <div class="field"><label>Due date</label><input type="date" id="checkDueDate"></div>
-            <div class="field"><label>Due time</label><input type="time" id="checkDueTime"></div>
-          </div>
-          <div class="field">
-            <label>Repeat</label>
-            <select id="checkRepeat">
-              <option value="none">Doesn't repeat</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </div>
-          <div class="two-col">
-            <button class="btn ghost" id="checkCancelEditBtn" style="display:none;">Cancel</button>
-            <button class="btn accent block" id="checkSubmitBtn" style="grid-column:1/3;">Add reminder</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <input type="text" class="search-box" id="checkSearch" placeholder="Search reminders&hellip;">
+        <input type="text" class="search-box" id="checkSearch" placeholder="Search reminders&hellip;" style="margin-bottom:8px;">
+        <div class="tag-pill-row" id="checkTagFilterChips"></div>
         <div id="checklistList"></div>
       </div>
+      <button type="button" class="fab-add" id="checkOpenAddBtn">+ Add Item</button>
     </section>
 
     <!-- ===================== SLEEP ===================== -->
@@ -1127,9 +1147,20 @@
         <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
       </div>
       <div class="card">
-        <h2 id="calAgendaTitle">Today</h2>
-        <div id="calAgenda"></div>
-        <button class="btn ghost block" id="calExportIcsBtn" style="margin-top:12px;">Download .ics for upcoming events</button>
+        <div class="row">
+          <h2 style="margin:0;" id="calAgendaTitle">Today</h2>
+          <button class="btn accent sm" id="calQuickAddBtn">+ Add event</button>
+        </div>
+        <div id="calAgenda" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <h2>Sync &amp; export</h2>
+        <div class="stack">
+          <button class="btn ghost block" id="calExportIcsBtn">Download .ics for upcoming events</button>
+          <button class="btn ghost block" id="calGcalBatchBtn">Open upcoming events in Google Calendar</button>
+          <button class="btn ghost block" id="calImportIcsBtn">Import .ics file</button>
+          <input type="file" id="calImportIcsInput" accept=".ics,text/calendar" style="display:none;">
+        </div>
       </div>
     </section>
 
@@ -1170,25 +1201,43 @@
     <!-- ===================== RECIPES ===================== -->
     <section class="screen" id="screen-recipes">
       <div class="card">
-        <h2 id="recipeFormTitle">New recipe</h2>
-        <div class="stack">
-          <div class="field"><label>Name</label><input type="text" id="recipeName" placeholder="Chicken stir-fry&hellip;" autocomplete="off"></div>
-          <div class="field"><label>Cook time (minutes)</label><input type="number" inputmode="numeric" id="recipeCookTime" placeholder="25"></div>
-          <div class="field">
-            <label>Ingredients</label>
-            <div id="recipeIngredientsEditor" class="stack"></div>
-            <button class="btn ghost sm" id="recipeAddIngredientBtn" style="margin-top:6px;">+ Add ingredient</button>
-          </div>
-          <div class="field"><label>Instructions (optional)</label><textarea class="export-text" style="min-height:80px;" id="recipeInstructions"></textarea></div>
-          <div class="two-col">
-            <button class="btn ghost" id="recipeCancelEditBtn" style="display:none;">Cancel</button>
-            <button class="btn accent block" id="recipeSubmitBtn" style="grid-column:1/3;">Save recipe</button>
-          </div>
+        <div class="segmented" id="recipesTabSeg">
+          <button type="button" data-recipetab="recipes" class="active">My Recipes</button>
+          <button type="button" data-recipetab="mealprep">Meal Prep</button>
         </div>
       </div>
-      <div class="card">
-        <h2>Your recipes</h2>
-        <div id="recipesList"></div>
+
+      <!-- ---- MY RECIPES ---- -->
+      <div id="recipesPanel">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">Your recipes</h2>
+            <button class="btn accent sm" id="recipeNewBtn">+ New recipe</button>
+          </div>
+          <div class="field" style="margin-top:10px;"><input type="text" id="recipeSearch" placeholder="Search recipes&hellip;" autocomplete="off"></div>
+          <div class="chip-row" id="recipeTagFilterChips" style="margin-top:8px;"></div>
+          <div id="recipesList" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <!-- ---- MEAL PREP ---- -->
+      <div id="mealPrepPanel" style="display:none;">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center; gap:8px;">
+            <button class="btn ghost sm" id="mealPrepPrevDayBtn" type="button">&lsaquo;</button>
+            <input type="date" id="mealPrepDate" style="flex:1; text-align:center;">
+            <button class="btn ghost sm" id="mealPrepNextDayBtn" type="button">&rsaquo;</button>
+          </div>
+        </div>
+        <div class="card">
+          <div id="mealPrepSlots"></div>
+          <button class="btn accent block" id="mealPrepAddBtn" style="margin-top:10px;">+ Add meal</button>
+        </div>
+        <div class="card">
+          <h2>Shopping list</h2>
+          <div class="stat-sub" style="margin-bottom:10px;">Scans the next 7 days of scheduled recipe meals for ingredients you don't already have, and adds anything missing to your grocery list.</div>
+          <button class="btn ghost block" id="mealPrepGenerateShopBtn">Generate shopping list</button>
+        </div>
       </div>
     </section>
 
@@ -1287,6 +1336,222 @@
   </div>
 </div>
 
+<!-- ================= RECIPE (dedicated create/edit view) ================= -->
+<div class="modal-backdrop" id="recipeModalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="recipeFormTitle">New recipe</div>
+    <div class="stack">
+      <div class="field"><label>Name</label><input type="text" id="recipeName" placeholder="Chicken stir-fry&hellip;" autocomplete="off"></div>
+      <div class="field"><label>Cook time (minutes)</label><input type="number" inputmode="numeric" id="recipeCookTime" placeholder="25"></div>
+      <div class="field"><label>Tags (comma separated)</label><input type="text" id="recipeTags" placeholder="quick, vegetarian, meal-prep&hellip;" autocomplete="off"></div>
+      <div class="field">
+        <label>Ingredients</label>
+        <div id="recipeIngredientsEditor" class="stack"></div>
+        <button type="button" class="btn ghost sm" id="recipeAddIngredientBtn" style="margin-top:6px;">+ Add ingredient</button>
+      </div>
+      <div class="field"><label>Instructions (optional)</label><textarea class="export-text" style="min-height:80px;" id="recipeInstructions"></textarea></div>
+      <div class="two-col">
+        <button class="btn ghost" id="recipeCancelEditBtn">Cancel</button>
+        <button class="btn accent" id="recipeSubmitBtn">Save recipe</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= INGREDIENT (dedicated add/edit view) ================= -->
+<div class="modal-backdrop" id="ingredientModalBackdrop" style="z-index:70;">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="ingredientModalTitle">Add ingredient</div>
+    <div class="stack">
+      <div class="field"><label>Ingredient name</label><input type="text" id="ingName" placeholder="Chicken breast&hellip;" autocomplete="off"></div>
+      <div class="two-col">
+        <div class="field"><label>Quantity</label><input type="text" id="ingQty" placeholder="2" inputmode="decimal"></div>
+        <div class="field">
+          <label>Unit</label>
+          <select id="ingUnit">
+            <option value="">&mdash;</option>
+            <option value="pcs">pcs</option>
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="ml">ml</option>
+            <option value="l">l</option>
+            <option value="cup">cup</option>
+            <option value="tbsp">tbsp</option>
+            <option value="tsp">tsp</option>
+            <option value="oz">oz</option>
+            <option value="lb">lb</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>Est. cost</label><input type="number" inputmode="decimal" id="ingCost" placeholder="0.00"></div>
+        <div class="field"><label>Preferred store</label><input type="text" id="ingStore" placeholder="Trader Joe's&hellip;" autocomplete="off"></div>
+      </div>
+      <button type="button" class="chip" id="ingHaveItToggle">Already have it</button>
+      <div class="two-col" style="margin-top:6px;">
+        <button class="btn ghost" id="ingredientCancelBtn">Cancel</button>
+        <button class="btn accent" id="ingredientSaveBtn">Save ingredient</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MEAL PREP ENTRY (dedicated add view) ================= -->
+<div class="modal-backdrop" id="mealPrepModalBackdrop" style="z-index:70;">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add meal</div>
+    <div class="stack">
+      <div class="field"><label>Date</label><input type="date" id="mealPrepEntryDate"></div>
+      <div class="field">
+        <label>Slot</label>
+        <div class="chip-row" id="mealPrepSlotChips"></div>
+      </div>
+      <div class="field">
+        <label>Source</label>
+        <div class="segmented" id="mealPrepSourceSeg">
+          <button type="button" data-source="recipe" class="active">Recipe</button>
+          <button type="button" data-source="venue">Dining spot</button>
+          <button type="button" data-source="freeform">Freeform</button>
+        </div>
+      </div>
+      <div class="field" id="mealPrepRecipeField">
+        <label>Recipe</label>
+        <select id="mealPrepRecipeSelect"></select>
+      </div>
+      <div class="field" id="mealPrepVenueField" style="display:none;">
+        <label>Dining spot</label>
+        <select id="mealPrepVenueSelect"></select>
+      </div>
+      <div class="field" id="mealPrepFreeformField" style="display:none;">
+        <label>What are you eating?</label>
+        <input type="text" id="mealPrepFreeformInput" placeholder="Leftover pasta&hellip;" autocomplete="off">
+      </div>
+      <div class="field"><label>Notes (optional)</label><input type="text" id="mealPrepNotes" placeholder="&hellip;" autocomplete="off"></div>
+      <div class="two-col">
+        <button class="btn ghost" id="mealPrepCancelBtn">Cancel</button>
+        <button class="btn accent" id="mealPrepSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DINING SETTINGS MODAL ================= -->
+<div class="modal-backdrop" id="diningSettingsModalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Dining settings</div>
+    <div class="stack">
+      <div class="field"><label>Starting dollar budget</label><input type="number" inputmode="decimal" id="diningStartInput" placeholder="0.00"></div>
+      <div class="field"><label>Semester end date</label><input type="date" id="diningSemesterEnd"></div>
+      <div class="two-col">
+        <button class="btn ghost" id="diningSettingsCancelBtn">Cancel</button>
+        <button class="btn accent" id="diningSettingsSaveBtn">Save settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUICK-ADD / EDIT CALENDAR EVENT MODAL ================= -->
+<div class="modal-backdrop" id="eventModalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="eventModalTitle">Add to calendar</div>
+    <div class="stack">
+      <div class="field"><label>Title</label><input type="text" id="eventTitle" placeholder="Event title&hellip;" autocomplete="off"></div>
+      <div class="field"><label>Date</label><input type="date" id="eventDate"></div>
+      <div class="toggle-row">
+        <div class="toggle-label">All-day</div>
+        <label class="switch"><input type="checkbox" id="eventAllDay" checked><span class="track"></span></label>
+      </div>
+      <div class="two-col" id="eventTimeRow" style="display:none;">
+        <div class="field"><label>Start time</label><input type="time" id="eventStartTime"></div>
+        <div class="field"><label>End time</label><input type="time" id="eventEndTime"></div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><input type="text" id="eventNotes" placeholder="&hellip;" autocomplete="off"></div>
+      <div class="two-col">
+        <button class="btn ghost" id="eventCancelBtn">Cancel</button>
+        <button class="btn accent" id="eventSaveBtn">Save event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CHECKLIST / REMINDER ADD-ITEM MODAL ================= -->
+<div class="modal-backdrop" id="checkModalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="checkFormTitle">New reminder</div>
+    <div class="stack">
+      <div class="field"><label>Title</label><input type="text" id="checkTitle" placeholder="Renew parking pass&hellip;" autocomplete="off"></div>
+      <div class="field">
+        <label>Subtasks</label>
+        <div id="checkSubtasksEditor" class="stack"></div>
+        <button class="btn ghost sm" id="checkAddSubtaskBtn" style="margin-top:6px;">+ Add subtask</button>
+      </div>
+      <div class="field">
+        <label>Urgency</label>
+        <div class="chip-row" id="checkUrgencyChips"></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>Due date</label><input type="date" id="checkDueDate"></div>
+        <div class="field"><label>Due time</label><input type="time" id="checkDueTime"></div>
+      </div>
+      <div class="field">
+        <label>Repeat</label>
+        <select id="checkRepeat">
+          <option value="none">Doesn't repeat</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="field"><label>Tags (comma separated)</label><input type="text" id="checkTags" placeholder="school, apartment, urgent&hellip;" autocomplete="off"></div>
+      <div class="two-col">
+        <button class="btn ghost" id="checkCancelEditBtn">Cancel</button>
+        <button class="btn accent block" id="checkSubmitBtn" style="grid-column:2/3;">Add reminder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CHECKLIST ITEM ADD-TO-CALENDAR MODAL TRIGGER (shares eventModal) ================= -->
+
+<!-- ================= GROCERY EDIT MODAL (dedicated add/edit screen) ================= -->
+
+<!-- ================= CHORE EDIT MODAL ================= -->
+<div class="modal-backdrop" id="choreEditModalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit chore</div>
+    <div class="stack">
+      <div class="field"><label>Chore</label><input type="text" id="choreEditName" placeholder="Take out trash&hellip;" autocomplete="off"></div>
+      <div class="field"><label>Assigned to</label><div class="chip-row" id="choreEditAssigneeChips"></div></div>
+      <div class="field">
+        <label>Recurrence</label>
+        <select id="choreEditRecurrence">
+          <option value="none">One-time</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="custom">Every N days</option>
+        </select>
+      </div>
+      <div class="field" id="choreEditCustomDaysRow" style="display:none;">
+        <label>Every N days</label>
+        <input type="number" inputmode="numeric" id="choreEditCustomDays" placeholder="3">
+      </div>
+      <div class="field"><label>Next due</label><input type="date" id="choreEditDueDate"></div>
+      <div class="two-col">
+        <button class="btn ghost" id="choreEditCancelBtn">Cancel</button>
+        <button class="btn accent" id="choreEditSaveBtn">Save changes</button>
+      </div>
+      <button class="btn danger sm block" id="choreEditDeleteBtn">Delete chore</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1353,6 +1618,8 @@ function freshState(){
     chores:[],
     recipes:[],
     diningVenues:[],
+    mealPrep: { entries:[] },
+    calendarEvents:[],
     cardOptions: { purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false },
     notifiedKeys:[]
   };
@@ -1371,12 +1638,18 @@ function normalizeState(parsed){
   out.mealPlan.extraBanked = out.mealPlan.extraBanked || 0;
   out.shoppingItems = (parsed.shoppingItems || []).map(i=> Object.assign({owner:"me"}, i));
   out.itemCatalog = parsed.itemCatalog || [];
-  out.checklist = parsed.checklist || [];
+  out.checklist = (parsed.checklist || []).map(i=>Object.assign({tags:[]}, i, {tags: i.tags||[]}));
   out.sleepLogs = parsed.sleepLogs || [];
   out.notes = parsed.notes || [];
   out.chores = parsed.chores || [];
-  out.recipes = parsed.recipes || [];
-  out.diningVenues = parsed.diningVenues || [];
+  out.recipes = (parsed.recipes || []).map(r=>Object.assign({tags:[]}, r, {
+    tags: r.tags || [],
+    ingredients: (r.ingredients||[]).map(i=>Object.assign({unit:"", cost:null, store:""}, i))
+  }));
+  out.diningVenues = (parsed.diningVenues || []).map(v=>Object.assign({meals:[]}, v, {meals: v.meals||[]}));
+  out.mealPrep = Object.assign({ entries:[] }, parsed.mealPrep || {});
+  out.mealPrep.entries = out.mealPrep.entries || [];
+  out.calendarEvents = parsed.calendarEvents || [];
   out.cardOptions = Object.assign({ purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false }, parsed.cardOptions || {});
   out.notifiedKeys = parsed.notifiedKeys || [];
   out.schemaVersion = 2;
@@ -1418,9 +1691,28 @@ function nowTimeISO(){
   const d = new Date();
   return pad(d.getHours())+":"+pad(d.getMinutes());
 }
+// DATE SAFETY: every calendar-date-only value in this app is an ISO "YYYY-MM-DD"
+// string. To avoid the classic 1-hour/23-hour shift bugs that happen when DST
+// transitions land between a date being constructed and later read back out,
+// all date-only math below is done in the UTC domain end-to-end: parseDate()
+// anchors the string at Date.UTC(y, m-1, d), every helper that derives a new
+// date from it reads/writes with getUTC*/setUTC*, and isoFromDate() (and
+// fmtDateShort's {timeZone:"UTC"} option) read it back out the same way. Local
+// time is only ever used for "what day/time is it right now" (todayISO,
+// nowTimeISO, isoFromTimestamp) which intentionally reflect the user's wall clock.
 function parseDate(iso){
   const [y,m,d] = iso.split("-").map(Number);
-  return new Date(y, m-1, d);
+  return new Date(Date.UTC(y, m-1, d));
+}
+function isoFromDate(d){
+  return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
+}
+function isoFromTimestamp(ts){
+  // For epoch-ms timestamps (createdAt/updatedAt) we want the LOCAL calendar
+  // day the event happened on, not the UTC day - so this stays local-domain,
+  // then hands off an ISO string that UTC-anchored helpers can safely consume.
+  const d = new Date(ts);
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 }
 function daysBetweenInclusive(a,b){
   // Compare using UTC calendar components (not local-midnight ms diffs) so
@@ -1433,7 +1725,7 @@ function daysBetweenInclusive(a,b){
 }
 function fmtDateShort(iso){
   const d = parseDate(iso);
-  return d.toLocaleDateString(undefined,{month:"short", day:"numeric"});
+  return d.toLocaleDateString(undefined,{month:"short", day:"numeric", timeZone:"UTC"});
 }
 function fmtTime12(t){
   if(!t) return "";
@@ -1455,28 +1747,28 @@ function toast(msg){
 }
 function startOfWeek(iso){
   const d = parseDate(iso);
-  const day = d.getDay(); // 0 = Sun
-  d.setDate(d.getDate()-day);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const day = d.getUTCDay(); // 0 = Sun
+  d.setUTCDate(d.getUTCDate()-day);
+  return isoFromDate(d);
 }
 function endOfWeek(iso){
   const d = parseDate(startOfWeek(iso));
-  d.setDate(d.getDate()+6);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  d.setUTCDate(d.getUTCDate()+6);
+  return isoFromDate(d);
 }
 function startOfMonth(iso){
   const d = parseDate(iso);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-01";
+  return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-01";
 }
 function endOfMonth(iso){
   const d = parseDate(iso);
-  const last = new Date(d.getFullYear(), d.getMonth()+1, 0);
-  return last.getFullYear()+"-"+pad(last.getMonth()+1)+"-"+pad(last.getDate());
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 0));
+  return isoFromDate(last);
 }
 function addDaysISO(iso, n){
   const d = parseDate(iso);
-  d.setDate(d.getDate()+n);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  d.setUTCDate(d.getUTCDate()+n);
+  return isoFromDate(d);
 }
 
 /* ================= CRUD ================= */
@@ -1531,7 +1823,7 @@ function showScreen(name){
   if(name==="notes") renderNotes();
   if(name==="calendar") renderCalendar();
   if(name==="chores") renderChores();
-  if(name==="recipes") renderRecipes();
+  if(name==="recipes") activateRecipesScreen();
   if(name==="venues") renderVenues();
 }
 document.querySelectorAll(".tab-btn").forEach(b=>{
@@ -1946,21 +2238,25 @@ function diningRemainingAmt(){
   return (state.diningDollars.startingBalance||0) - diningTxSum();
 }
 
-document.getElementById("diningSetBalanceBtn").addEventListener("click", ()=>{
-  const v = parseFloat(document.getElementById("diningStartInput").value);
-  if(isNaN(v) || v<0){ toast("Enter a valid balance"); return; }
-  state.diningDollars.startingBalance = v;
+function openDiningSettingsModal(){
+  document.getElementById("diningStartInput").value = state.diningDollars.startingBalance || "";
+  document.getElementById("diningSemesterEnd").value = state.diningDollars.semesterEnd || "";
+  document.getElementById("diningSettingsModalBackdrop").classList.add("open");
+}
+function closeDiningSettingsModal(){ document.getElementById("diningSettingsModalBackdrop").classList.remove("open"); }
+document.getElementById("diningSettingsBtn").addEventListener("click", openDiningSettingsModal);
+document.getElementById("diningSettingsCancelBtn").addEventListener("click", closeDiningSettingsModal);
+document.getElementById("diningSettingsModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="diningSettingsModalBackdrop") closeDiningSettingsModal(); });
+document.getElementById("diningSettingsSaveBtn").addEventListener("click", ()=>{
+  const balRaw = document.getElementById("diningStartInput").value;
+  const bal = parseFloat(balRaw);
+  if(balRaw!=="" && (isNaN(bal) || bal<0)){ toast("Enter a valid balance"); return; }
+  if(balRaw!=="") state.diningDollars.startingBalance = bal;
+  const sem = document.getElementById("diningSemesterEnd").value;
+  if(sem) state.diningDollars.semesterEnd = sem;
   saveState();
-  toast("Balance set");
-  renderDining();
-});
-
-document.getElementById("diningSetSemesterBtn").addEventListener("click", ()=>{
-  const v = document.getElementById("diningSemesterEnd").value;
-  if(!v){ toast("Pick a date"); return; }
-  state.diningDollars.semesterEnd = v;
-  saveState();
-  toast("Semester end saved");
+  closeDiningSettingsModal();
+  toast("Dining settings saved");
   renderDining();
 });
 
@@ -1975,7 +2271,7 @@ function computeDiningVelocity(){
   let scheduledDaysRemaining = 0;
   let cursor = today, guard = 0;
   while(cursor <= sem && guard < 400){
-    const wk = WEEKDAY_KEYS[parseDate(cursor).getDay()];
+    const wk = WEEKDAY_KEYS[parseDate(cursor).getUTCDay()];
     const sched = state.mealPlan.schedule[wk];
     const hasMeals = sched.b || sched.l || sched.d;
     if(hasMeals) scheduledDaysRemaining++;
@@ -2023,6 +2319,32 @@ document.getElementById("diningSaveFavBtn").addEventListener("click", ()=>{
   renderDiningFavorites();
 });
 
+/* Auto-recalculation & calendar integration: logging any dining meal deducts
+   from the budget (handled by diningRemainingAmt reading transactions), and
+   also marks a scheduled meal-plan slot + meal-prep entry as completed so
+   Meal Prep and the Master Calendar stay in sync. */
+function syncMealLoggedForDate(dateISO){
+  const wk = WEEKDAY_KEYS[parseDate(dateISO).getUTCDay()];
+  const sched = state.mealPlan.schedule[wk];
+  if(sched){
+    state.mealPlan.log[dateISO] = state.mealPlan.log[dateISO] || {};
+    const log = state.mealPlan.log[dateISO];
+    const order = ["b","l","d"];
+    for(let i=0;i<order.length;i++){
+      const slot = order[i];
+      if(sched[slot] && !log[slot]){ log[slot] = "eaten"; break; }
+    }
+  }
+  const entry = (state.mealPrep.entries||[]).find(e=>e.date===dateISO && !e.completed);
+  if(entry){
+    entry.completed = true;
+    if(entry.linkedChecklistId){
+      const item = state.checklist.find(c=>c.id===entry.linkedChecklistId);
+      if(item) item.done = true;
+    }
+  }
+}
+
 function renderDiningFavorites(){
   const wrap = document.getElementById("diningFavChipRow");
   const empty = document.getElementById("diningFavEmpty");
@@ -2038,7 +2360,9 @@ function renderDiningFavorites(){
     btn.addEventListener("click", ()=>{
       const fav = favs.find(f=>f.id===btn.dataset.favLog);
       if(!fav) return;
-      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date: todayISO()});
+      const date = todayISO();
+      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date});
+      syncMealLoggedForDate(date);
       saveState();
       toast("Logged "+fav.name);
       renderDining();
@@ -2053,6 +2377,7 @@ document.getElementById("diningTxSubmit").addEventListener("click", ()=>{
   if(!name){ toast("Give it a name"); return; }
   if(isNaN(cost) || cost<=0){ toast("Enter a cost"); return; }
   state.diningDollars.transactions.push({id:uid(), name, cost, date});
+  syncMealLoggedForDate(date);
   saveState();
   document.getElementById("diningTxName").value = "";
   document.getElementById("diningTxCost").value = "";
@@ -2095,7 +2420,7 @@ function computeMealWeekStats(todayIso){
   let scheduled=0, eaten=0, skipped=0;
   let cursor = ws, guard = 0;
   while(cursor<=we && guard<10){
-    const wk = WEEKDAY_KEYS[parseDate(cursor).getDay()];
+    const wk = WEEKDAY_KEYS[parseDate(cursor).getUTCDay()];
     const sched = state.mealPlan.schedule[wk];
     const log = state.mealPlan.log[cursor] || {};
     ["b","l","d"].forEach(slot=>{
@@ -2175,7 +2500,7 @@ function renderMealPlan(){
   document.getElementById("mealsLeftBadge").textContent = stats.mealsLeftThisWeek;
   document.getElementById("mealsBankedBadge").textContent = state.mealPlan.extraBanked;
 
-  const weekdayKey = WEEKDAY_KEYS[parseDate(today).getDay()];
+  const weekdayKey = WEEKDAY_KEYS[parseDate(today).getUTCDay()];
   document.getElementById("todayWeekdayLabel").textContent = WEEKDAY_LABELS[weekdayKey];
   const sched = state.mealPlan.schedule[weekdayKey];
   const log = state.mealPlan.log[today] || {};
@@ -2210,8 +2535,10 @@ function renderDining(){
   const bar = document.getElementById("diningBar");
   bar.style.width = pct+"%";
   bar.classList.toggle("over", spent>bal && bal>0);
-  document.getElementById("diningStartInput").value = state.diningDollars.startingBalance || "";
-  document.getElementById("diningSemesterEnd").value = state.diningDollars.semesterEnd || "";
+  const summaryBits = [];
+  summaryBits.push("Starting budget: " + money(state.diningDollars.startingBalance||0));
+  summaryBits.push(state.diningDollars.semesterEnd ? "Semester ends " + fmtDateShort(state.diningDollars.semesterEnd) : "No semester end date set");
+  document.getElementById("diningSettingsSummary").textContent = summaryBits.join(" \u00b7 ") + " \u2014 tap \u2699\ufe0f to edit";
   if(!document.getElementById("diningTxDate").value) document.getElementById("diningTxDate").value = todayISO();
   renderDiningVelocity();
   renderDiningFavorites();
@@ -2460,6 +2787,40 @@ document.getElementById("shopClearCheckedBtn").addEventListener("click", ()=>{
   renderShop();
 });
 
+/* ---- Grocery bulk select / batch reassignment ---- */
+let shopSelectMode = false;
+let shopSelectedIds = new Set();
+
+function updateShopBatchBar(){
+  document.getElementById("shopBatchBar").classList.toggle("hidden", !shopSelectMode || shopSelectedIds.size===0);
+  document.getElementById("shopBatchCount").textContent = `${shopSelectedIds.size} selected`;
+}
+
+document.getElementById("shopToggleSelectMode").addEventListener("click", ()=>{
+  shopSelectMode = !shopSelectMode;
+  shopSelectedIds.clear();
+  document.getElementById("shopToggleSelectMode").textContent = shopSelectMode ? "Cancel" : "Select";
+  updateShopBatchBar();
+  renderShop();
+});
+
+document.getElementById("shopBatchBar").querySelectorAll("[data-batch-owner]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    if(!shopSelectedIds.size) return;
+    const owner = btn.dataset.batchOwner;
+    state.shoppingItems.forEach(it=>{
+      if(shopSelectedIds.has(it.id)) it.owner = owner;
+    });
+    saveState();
+    toast(`Reassigned ${shopSelectedIds.size} item${shopSelectedIds.size===1?'':'s'}`);
+    shopSelectedIds.clear();
+    shopSelectMode = false;
+    document.getElementById("shopToggleSelectMode").textContent = "Select";
+    updateShopBatchBar();
+    renderShop();
+  });
+});
+
 function urgencyRank(item){
   if(item.urgency==="asap") return 0;
   if(item.urgency==="by") return 1;
@@ -2500,6 +2861,7 @@ function renderShop(){
   const wrap = document.getElementById("shopList");
   if(!items.length){
     wrap.innerHTML = '<div class="empty-state">Nothing on your list yet.</div>';
+    updateShopBatchBar();
     return;
   }
   wrap.innerHTML = items.map(item=>{
@@ -2520,7 +2882,9 @@ function renderShop(){
         logBtn = `<div class="shop-log-btn" data-log-expense="${item.id}" data-split-mode="full">Log as expense &rsaquo;</div>`;
       }
     }
+    const selectBox = shopSelectMode ? `<div class="select-check ${shopSelectedIds.has(item.id)?'checked':''}" data-shop-select="${item.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>` : "";
     return `<div class="shop-row ${item.checked?'checked':''}" data-id="${item.id}">
+      ${selectBox}
       <div class="shop-check ${item.checked?'checked':''}" data-shop-check="${item.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
       <div class="shop-main" data-shop-edit="${item.id}">
         <div class="shop-name">${escapeHtml(item.name)}</div>
@@ -2536,9 +2900,19 @@ function renderShop(){
     </div>`;
   }).join("");
 
+  wrap.querySelectorAll("[data-shop-select]").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const id = el.dataset.shopSelect;
+      if(shopSelectedIds.has(id)) shopSelectedIds.delete(id); else shopSelectedIds.add(id);
+      el.classList.toggle("checked", shopSelectedIds.has(id));
+      updateShopBatchBar();
+    });
+  });
   wrap.querySelectorAll("[data-shop-check]").forEach(el=>{
     el.addEventListener("click", (e)=>{
       e.stopPropagation();
+      if(shopSelectMode) return; // avoid accidental purchase-toggle while bulk selecting
       const id = el.dataset.shopCheck;
       const it = state.shoppingItems.find(i=>i.id===id);
       if(it){ it.checked = !it.checked; saveState(); renderShop(); }
@@ -2546,6 +2920,12 @@ function renderShop(){
   });
   wrap.querySelectorAll("[data-shop-edit]").forEach(el=>{
     el.addEventListener("click", ()=>{
+      if(shopSelectMode){
+        const id = el.dataset.shopEdit;
+        if(shopSelectedIds.has(id)) shopSelectedIds.delete(id); else shopSelectedIds.add(id);
+        renderShop();
+        return;
+      }
       const id = el.dataset.shopEdit;
       const it = state.shoppingItems.find(i=>i.id===id);
       if(it) loadItemIntoForm(it);
@@ -2573,6 +2953,7 @@ function renderShop(){
       renderHome();
     });
   });
+  updateShopBatchBar();
 }
 
 /* ================= CATEGORY MANAGER ================= */
@@ -2906,7 +3287,9 @@ function renderFavoriteChipsInto(chipsElId, emptyElId){
     btn.addEventListener("click", ()=>{
       const fav = favs.find(f=>f.id===btn.dataset.favLog);
       if(!fav) return;
-      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date: todayISO()});
+      const date = todayISO();
+      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date});
+      syncMealLoggedForDate(date);
       saveState();
       toast("Logged "+fav.name);
       renderFavoriteChipsInto("diningFavChipRow","diningFavEmpty");
@@ -2920,6 +3303,12 @@ function renderFavoriteChipsInto(chipsElId, emptyElId){
 let checkEditingId = null;
 let checkUrgency = "med";
 let checkSubtasksDraft = [];
+let checkTagFilters = new Set();
+
+function openCheckModal(){ document.getElementById("checkModalBackdrop").classList.add("open"); }
+function closeCheckModal(){ document.getElementById("checkModalBackdrop").classList.remove("open"); }
+document.getElementById("checkOpenAddBtn").addEventListener("click", ()=>{ resetCheckForm(); openCheckModal(); });
+document.getElementById("checkModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="checkModalBackdrop") closeCheckModal(); });
 
 function renderCheckUrgencyChips(){
   const opts = [["low","Low"],["med","Medium"],["high","High"]];
@@ -2967,14 +3356,13 @@ function resetCheckForm(){
   document.getElementById("checkDueDate").value = "";
   document.getElementById("checkDueTime").value = "";
   document.getElementById("checkRepeat").value = "none";
+  document.getElementById("checkTags").value = "";
   checkUrgency = "med";
   checkSubtasksDraft = [];
   renderCheckUrgencyChips();
   renderSubtasksEditor();
   document.getElementById("checkFormTitle").textContent = "New reminder";
   document.getElementById("checkSubmitBtn").textContent = "Add reminder";
-  document.getElementById("checkSubmitBtn").style.gridColumn = "1/3";
-  document.getElementById("checkCancelEditBtn").style.display = "none";
 }
 function loadCheckIntoForm(item){
   checkEditingId = item.id;
@@ -2982,18 +3370,16 @@ function loadCheckIntoForm(item){
   document.getElementById("checkDueDate").value = item.dueDate || "";
   document.getElementById("checkDueTime").value = item.dueTime || "";
   document.getElementById("checkRepeat").value = item.repeat || "none";
+  document.getElementById("checkTags").value = (item.tags||[]).join(", ");
   checkUrgency = item.urgency || "med";
   checkSubtasksDraft = (item.subtasks||[]).map(s=>Object.assign({}, s));
   renderCheckUrgencyChips();
   renderSubtasksEditor();
   document.getElementById("checkFormTitle").textContent = "Edit reminder";
   document.getElementById("checkSubmitBtn").textContent = "Save changes";
-  document.getElementById("checkSubmitBtn").style.gridColumn = "2/3";
-  document.getElementById("checkCancelEditBtn").style.display = "flex";
-  const mainEl = document.querySelector("main");
-  if(mainEl) mainEl.scrollTop = 0;
+  openCheckModal();
 }
-document.getElementById("checkCancelEditBtn").addEventListener("click", ()=>{ resetCheckForm(); renderChecklist(); });
+document.getElementById("checkCancelEditBtn").addEventListener("click", ()=>{ resetCheckForm(); closeCheckModal(); });
 
 document.getElementById("checkSubmitBtn").addEventListener("click", ()=>{
   const title = document.getElementById("checkTitle").value.trim();
@@ -3001,19 +3387,21 @@ document.getElementById("checkSubmitBtn").addEventListener("click", ()=>{
   const dueDate = document.getElementById("checkDueDate").value || null;
   const dueTime = document.getElementById("checkDueTime").value || null;
   const repeat = document.getElementById("checkRepeat").value;
+  const tags = document.getElementById("checkTags").value.split(",").map(t=>t.trim()).filter(Boolean);
   const subtasks = checkSubtasksDraft.filter(s=>s.text.trim()).map(s=>({id:s.id||uid(), text:s.text.trim(), done:!!s.done}));
   if(checkEditingId){
     const idx = state.checklist.findIndex(i=>i.id===checkEditingId);
     if(idx>-1){
-      state.checklist[idx] = Object.assign({}, state.checklist[idx], {title, dueDate, dueTime, repeat, urgency:checkUrgency, subtasks, updatedAt:Date.now()});
+      state.checklist[idx] = Object.assign({}, state.checklist[idx], {title, dueDate, dueTime, repeat, tags, urgency:checkUrgency, subtasks, updatedAt:Date.now()});
     }
     toast("Reminder updated");
   } else {
-    state.checklist.push({ id:uid(), title, dueDate, dueTime, repeat, urgency:checkUrgency, subtasks, done:false, createdAt:Date.now(), updatedAt:Date.now() });
+    state.checklist.push({ id:uid(), title, dueDate, dueTime, repeat, tags, urgency:checkUrgency, subtasks, done:false, createdAt:Date.now(), updatedAt:Date.now() });
     toast("Reminder added");
   }
   saveState();
   resetCheckForm();
+  closeCheckModal();
   renderChecklist();
 });
 
@@ -3022,8 +3410,8 @@ function advanceDate(dateIso, repeat){
   if(repeat==="weekly") return addDaysISO(dateIso,7);
   if(repeat==="monthly"){
     const d = parseDate(dateIso);
-    d.setMonth(d.getMonth()+1);
-    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+    d.setUTCMonth(d.getUTCMonth()+1);
+    return isoFromDate(d);
   }
   return dateIso;
 }
@@ -3035,7 +3423,7 @@ function toggleCheckDone(id){
   if(item.done && item.repeat && item.repeat!=="none" && item.dueDate){
     const nextDue = advanceDate(item.dueDate, item.repeat);
     state.checklist.push({
-      id:uid(), title:item.title, dueDate:nextDue, dueTime:item.dueTime, repeat:item.repeat,
+      id:uid(), title:item.title, dueDate:nextDue, dueTime:item.dueTime, repeat:item.repeat, tags:(item.tags||[]).slice(),
       urgency:item.urgency, subtasks:(item.subtasks||[]).map(s=>({id:uid(), text:s.text, done:false})),
       done:false, createdAt:Date.now(), updatedAt:Date.now()
     });
@@ -3069,11 +3457,34 @@ function toggleSubtask(itemId, subId){
 
 document.getElementById("checkSearch").addEventListener("input", renderChecklist);
 
+function allCheckTags(){
+  const set = new Set();
+  state.checklist.forEach(i=>(i.tags||[]).forEach(t=>set.add(t)));
+  return Array.from(set).sort();
+}
+function renderCheckTagFilterChips(){
+  const container = document.getElementById("checkTagFilterChips");
+  const tags = allCheckTags();
+  if(!tags.length){ container.innerHTML = ""; return; }
+  container.innerHTML = tags.map(t=>`<button type="button" class="chip ${checkTagFilters.has(t)?'active':''}" data-check-tag-filter="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join("");
+  container.querySelectorAll("[data-check-tag-filter]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const t = btn.dataset.checkTagFilter;
+      if(checkTagFilters.has(t)) checkTagFilters.delete(t); else checkTagFilters.add(t);
+      renderChecklist();
+    });
+  });
+}
+
 function renderChecklist(){
+  renderCheckTagFilterChips();
   const q = document.getElementById("checkSearch").value.trim().toLowerCase();
   let items = state.checklist.slice();
   if(q){
-    items = items.filter(i=> i.title.toLowerCase().includes(q) || (i.subtasks||[]).some(s=>s.text.toLowerCase().includes(q)));
+    items = items.filter(i=> i.title.toLowerCase().includes(q) || (i.subtasks||[]).some(s=>s.text.toLowerCase().includes(q)) || (i.tags||[]).some(t=>t.toLowerCase().includes(q)));
+  }
+  if(checkTagFilters.size){
+    items = items.filter(i=> (i.tags||[]).some(t=>checkTagFilters.has(t)));
   }
   const wrap = document.getElementById("checklistList");
   if(!items.length){
@@ -3081,10 +3492,10 @@ function renderChecklist(){
     return;
   }
   wrap.innerHTML = items.map((item)=>{
-    const idx = state.checklist.indexOf(item);
     const dueBits = [];
     if(item.dueDate) dueBits.push(fmtDateShort(item.dueDate) + (item.dueTime ? " "+fmtTime12(item.dueTime) : ""));
     if(item.repeat && item.repeat!=="none") dueBits.push("repeats "+item.repeat);
+    const tagsHtml = (item.tags||[]).length ? `<div class="note-tags" style="margin-top:6px;">${(item.tags||[]).map(t=>`<span class="note-tag">#${escapeHtml(t)}</span>`).join("")}</div>` : "";
     const subtaskHtml = (item.subtasks||[]).map(s=>`
       <div class="subtask-row ${s.done?'done':''}" data-toggle-sub="${item.id}|${s.id}">
         <span>${s.done?'\u2611':'\u2610'}</span><span>${escapeHtml(s.text)}</span>
@@ -3099,6 +3510,7 @@ function renderChecklist(){
             <span class="urgency-pill ${item.urgency}">${item.urgency.toUpperCase()}</span>
             ${dueBits.map(b=>`<span>${b}</span>`).join(" &middot; ")}
           </div>
+          ${tagsHtml}
         </div>
         <div class="reorder-btns">
           <button data-move="${item.id}|-1">&#9650;</button>
@@ -3106,6 +3518,9 @@ function renderChecklist(){
         </div>
       </div>
       ${subtaskHtml}
+      <div style="margin-top:8px; padding-left:30px;">
+        <button type="button" class="link-btn" data-add-cal="check|${item.id}">+ Add to calendar</button>
+      </div>
     </div>`;
   }).join("");
 
@@ -3130,6 +3545,14 @@ function renderChecklist(){
       e.stopPropagation();
       const [itemId,subId] = el.dataset.toggleSub.split("|");
       toggleSubtask(itemId, subId);
+    });
+  });
+  wrap.querySelectorAll("[data-add-cal]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const [kind,id] = btn.dataset.addCal.split("|");
+      const item = state.checklist.find(i=>i.id===id);
+      if(item) openEventModalFor({ title:item.title, date:item.dueDate, time:item.dueTime, sourceType:"reminder", sourceId:item.id });
     });
   });
 }
@@ -3303,7 +3726,10 @@ function renderNotes(){
         <span class="note-tag">${escapeHtml(n.category)}</span>
         ${(n.tags||[]).map(t=>`<span class="note-tag">#${escapeHtml(t)}</span>`).join("")}
       </div>
-      <div class="note-date">Updated ${fmtDateShort(new Date(n.updatedAt).toISOString().slice(0,10))}</div>
+      <div class="row" style="margin-top:6px;">
+        <div class="note-date">Updated ${fmtDateShort(isoFromTimestamp(n.updatedAt))}</div>
+        <button type="button" class="link-btn" data-add-cal="note|${n.id}">+ Add to calendar</button>
+      </div>
     </div>
   `).join("");
   wrap.querySelectorAll("[data-edit-note]").forEach(el=>{
@@ -3312,26 +3738,43 @@ function renderNotes(){
       if(note) loadNoteIntoForm(note);
     });
   });
+  wrap.querySelectorAll("[data-add-cal]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const [,id] = btn.dataset.addCal.split("|");
+      const note = state.notes.find(n=>n.id===id);
+      if(note) openEventModalFor({ title:note.title, sourceType:"note", sourceId:note.id });
+    });
+  });
 }
 
-/* ================= CALENDAR + ICS EXPORT ================= */
+/* ================= CALENDAR + ICS EXPORT/IMPORT ================= */
 let calViewDate = new Date();
 let calSelectedDate = todayISO();
-const EVT_COLORS = { chore:"#B33B2C", check:"#B4632B", meal:"#3F6B4E" };
+const EVT_COLORS = { chore:"#B33B2C", check:"#B4632B", meal:"#3F6B4E", mealprep:"#3B6E8F", event:"#8A4B7A" };
 
 function getEventsForDate(dateISO){
   const events = [];
-  state.chores.forEach(c=>{ if(c.nextDueDate===dateISO) events.push({type:"chore", label:"Chore: "+c.name, color:EVT_COLORS.chore}); });
-  state.checklist.forEach(i=>{ if(!i.done && i.dueDate===dateISO) events.push({type:"check", label:i.title, color:EVT_COLORS.check}); });
-  const wk = WEEKDAY_KEYS[parseDate(dateISO).getDay()];
+  state.chores.forEach(c=>{ if(c.nextDueDate===dateISO) events.push({type:"chore", label:"Chore: "+c.name, color:EVT_COLORS.chore, sortKey:"0"}); });
+  state.checklist.forEach(i=>{ if(!i.done && i.dueDate===dateISO) events.push({type:"check", label:i.title, color:EVT_COLORS.check, time:i.dueTime||null, sortKey:i.dueTime||"1"}); });
+  const wk = WEEKDAY_KEYS[parseDate(dateISO).getUTCDay()];
   const sched = state.mealPlan.schedule[wk];
   if(sched && (sched.b||sched.l||sched.d)){
     const parts = [];
     if(sched.b) parts.push("Breakfast");
     if(sched.l) parts.push("Lunch");
     if(sched.d) parts.push("Dinner");
-    events.push({type:"meal", label:parts.join(" + ")+" scheduled", color:EVT_COLORS.meal});
+    events.push({type:"meal", label:parts.join(" + ")+" scheduled", color:EVT_COLORS.meal, sortKey:"2"});
   }
+  (state.mealPrep.entries||[]).filter(e=>e.date===dateISO).forEach(e=>{
+    const slotLabel = (MEALPREP_SLOTS.find(s=>s.key===e.slot)||{label:e.slot}).label;
+    events.push({ type:"mealprep", label: slotLabel+": "+mealPrepEntryLabel(e)+(e.completed?" \u2713":""), color:EVT_COLORS.mealprep, sortKey:"3"+e.slot, id:e.id });
+  });
+  (state.calendarEvents||[]).filter(e=>e.date===dateISO).forEach(e=>{
+    const timeLabel = e.allDay ? "" : (e.startTime ? " \u00b7 "+fmtTime12(e.startTime)+(e.endTime?"\u2013"+fmtTime12(e.endTime):"") : "");
+    events.push({ type:"event", label:e.title+timeLabel, color:EVT_COLORS.event, id:e.id, allDay:e.allDay, startTime:e.startTime, endTime:e.endTime, rawTitle:e.title, sortKey: e.allDay ? "4" : "4"+(e.startTime||"") });
+  });
+  events.sort((a,b)=>(a.sortKey||"").localeCompare(b.sortKey||""));
   return events;
 }
 
@@ -3394,19 +3837,33 @@ function renderCalendar(){
       <div class="cal-agenda-item">
         <span class="evt-dot-lg" style="background:${e.color}"></span>
         <span style="flex:1;">${escapeHtml(e.label)}</span>
-        ${e.type!=="meal" ? `<a href="${gcalUrl(e.label, calSelectedDate)}" target="_blank" rel="noopener" class="link-btn">+GCal</a>` : ""}
+        ${e.type!=="meal" && e.type!=="mealprep" ? `<a href="${gcalUrl(e.rawTitle||e.label, calSelectedDate, e.startTime, e.endTime)}" target="_blank" rel="noopener" class="link-btn">+GCal</a>` : ""}
+        ${e.type==="event" ? `<button type="button" class="link-btn" data-del-cal-event="${e.id}">Remove</button>` : ""}
       </div>
     `).join("");
+    agendaWrap.querySelectorAll("[data-del-cal-event]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.calendarEvents = state.calendarEvents.filter(ev=>ev.id!==btn.dataset.delCalEvent);
+        saveState();
+        toast("Removed");
+        renderCalendar();
+      });
+    });
   }
 }
 
-function gcalUrl(title, dateISO){
+function gcalUrl(title, dateISO, startTime, endTime){
+  if(startTime){
+    const startDT = dateISO.replace(/-/g,"")+"T"+startTime.replace(":","")+"00";
+    const endDT = dateISO.replace(/-/g,"")+"T"+(endTime||startTime).replace(":","")+"00";
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDT}/${endDT}`;
+  }
   const d = dateISO.replace(/-/g,"");
   const endD = addDaysISO(dateISO,1).replace(/-/g,"");
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${d}/${endD}`;
 }
 
-function generateICS(){
+function collectUpcomingIcsEvents(){
   const today = todayISO();
   const events = [];
   state.checklist.filter(i=>!i.done && i.dueDate && i.dueDate>=today).forEach(i=>{
@@ -3415,6 +3872,18 @@ function generateICS(){
   state.chores.filter(c=>c.nextDueDate && c.nextDueDate>=today).forEach(c=>{
     events.push({title:"Chore: "+c.name, date:c.nextDueDate});
   });
+  (state.mealPrep.entries||[]).filter(e=>!e.completed && e.date>=today).forEach(e=>{
+    const slotLabel = (MEALPREP_SLOTS.find(s=>s.key===e.slot)||{label:e.slot}).label;
+    events.push({title: slotLabel+": "+mealPrepEntryLabel(e), date:e.date});
+  });
+  (state.calendarEvents||[]).filter(e=>e.date>=today).forEach(e=>{
+    events.push({title:e.title, date:e.date, time:e.allDay?null:e.startTime, endTime:e.allDay?null:e.endTime});
+  });
+  return events;
+}
+
+function generateICS(){
+  const events = collectUpcomingIcsEvents();
   if(!events.length) return null;
   let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Tally//EN\r\n";
   events.forEach(e=>{
@@ -3424,6 +3893,7 @@ function generateICS(){
     ics += "DTSTAMP:"+ new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z\r\n";
     if(e.time){
       ics += "DTSTART:"+dateDigits+"T"+e.time.replace(":","")+"00\r\n";
+      if(e.endTime) ics += "DTEND:"+dateDigits+"T"+e.endTime.replace(":","")+"00\r\n";
     } else {
       ics += "DTSTART;VALUE=DATE:"+dateDigits+"\r\n";
     }
@@ -3442,6 +3912,127 @@ document.getElementById("calExportIcsBtn").addEventListener("click", ()=>{
   a.href = url; a.download = "tally-events.ics"; a.click();
   URL.revokeObjectURL(url);
   toast("Downloaded .ics");
+});
+
+/* ---- Batch "open in Google Calendar" ---- */
+document.getElementById("calGcalBatchBtn").addEventListener("click", ()=>{
+  const events = collectUpcomingIcsEvents().slice(0,8);
+  if(!events.length){ toast("No upcoming events"); return; }
+  events.forEach((e,idx)=>{
+    setTimeout(()=>{ window.open(gcalUrl(e.title, e.date, e.time, e.endTime), "_blank", "noopener"); }, idx*350);
+  });
+  toast(`Opening ${events.length} event${events.length===1?'':'s'} \u2014 allow pop-ups if blocked`);
+});
+
+/* ---- ICS import ---- */
+function parseICS(text){
+  const lines = text.replace(/\r\n[ \t]/g,"").split(/\r?\n/); // unfold folded lines
+  const events = [];
+  let cur = null;
+  lines.forEach(line=>{
+    if(line==="BEGIN:VEVENT"){ cur = {}; return; }
+    if(line==="END:VEVENT"){ if(cur) events.push(cur); cur = null; return; }
+    if(!cur) return;
+    const idx = line.indexOf(":");
+    if(idx<0) return;
+    const rawKey = line.slice(0,idx);
+    const value = line.slice(idx+1);
+    const key = rawKey.split(";")[0];
+    if(key==="SUMMARY") cur.title = value.replace(/\\,/g,",").replace(/\\n/gi," ");
+    if(key==="DTSTART"){
+      const isDateOnly = rawKey.includes("VALUE=DATE") && !rawKey.includes("VALUE=DATE-TIME");
+      const digits = value.replace(/Z$/,"");
+      if(isDateOnly || digits.length===8){
+        cur.date = digits.slice(0,4)+"-"+digits.slice(4,6)+"-"+digits.slice(6,8);
+      } else {
+        cur.date = digits.slice(0,4)+"-"+digits.slice(4,6)+"-"+digits.slice(6,8);
+        const timePart = digits.split("T")[1] || "";
+        if(timePart.length>=4) cur.startTime = timePart.slice(0,2)+":"+timePart.slice(2,4);
+      }
+    }
+    if(key==="DTEND"){
+      const digits = value.replace(/Z$/,"");
+      const timePart = digits.split("T")[1] || "";
+      if(timePart.length>=4) cur.endTime = timePart.slice(0,2)+":"+timePart.slice(2,4);
+    }
+  });
+  return events.filter(e=>e.title && e.date);
+}
+document.getElementById("calImportIcsBtn").addEventListener("click", ()=>{
+  document.getElementById("calImportIcsInput").click();
+});
+document.getElementById("calImportIcsInput").addEventListener("change", (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = parseICS(String(reader.result));
+      const existingKeys = new Set((state.calendarEvents||[]).map(e=>e.title+"|"+e.date+"|"+(e.startTime||"")));
+      let added = 0;
+      parsed.forEach(e=>{
+        const key = e.title+"|"+e.date+"|"+(e.startTime||"");
+        if(existingKeys.has(key)) return;
+        state.calendarEvents.push({
+          id:uid(), title:e.title, date:e.date,
+          allDay: !e.startTime, startTime: e.startTime||null, endTime: e.endTime||null,
+          notes:"", sourceType:"ics-import", sourceId:null
+        });
+        existingKeys.add(key);
+        added++;
+      });
+      saveState();
+      toast(`Imported ${added} event${added===1?'':'s'}`);
+      renderCalendar();
+    }catch(e){
+      toast("Couldn't read that .ics file");
+    }
+    ev.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+/* ---- Quick-Add / Add-to-Calendar event modal (shared by Calendar tab, Reminders, Notes) ---- */
+let eventModalSourceType = "custom";
+let eventModalSourceId = null;
+document.getElementById("eventAllDay").addEventListener("change", ()=>{
+  document.getElementById("eventTimeRow").style.display = document.getElementById("eventAllDay").checked ? "none" : "grid";
+});
+function openEventModalFor(opts){
+  opts = opts || {};
+  eventModalSourceType = opts.sourceType || "custom";
+  eventModalSourceId = opts.sourceId || null;
+  document.getElementById("eventModalTitle").textContent = opts.sourceType ? "Add to calendar" : "Add event";
+  document.getElementById("eventTitle").value = opts.title || "";
+  document.getElementById("eventDate").value = opts.date || calSelectedDate || todayISO();
+  const allDay = !opts.time;
+  document.getElementById("eventAllDay").checked = allDay;
+  document.getElementById("eventTimeRow").style.display = allDay ? "none" : "grid";
+  document.getElementById("eventStartTime").value = opts.time || "";
+  document.getElementById("eventEndTime").value = "";
+  document.getElementById("eventNotes").value = "";
+  document.getElementById("eventModalBackdrop").classList.add("open");
+}
+function closeEventModal(){ document.getElementById("eventModalBackdrop").classList.remove("open"); }
+document.getElementById("calQuickAddBtn").addEventListener("click", ()=> openEventModalFor({ date: calSelectedDate }));
+document.getElementById("eventCancelBtn").addEventListener("click", closeEventModal);
+document.getElementById("eventModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="eventModalBackdrop") closeEventModal(); });
+document.getElementById("eventSaveBtn").addEventListener("click", ()=>{
+  const title = document.getElementById("eventTitle").value.trim();
+  if(!title){ toast("Give it a title"); return; }
+  const date = document.getElementById("eventDate").value || todayISO();
+  const allDay = document.getElementById("eventAllDay").checked;
+  const startTime = allDay ? null : (document.getElementById("eventStartTime").value || null);
+  const endTime = allDay ? null : (document.getElementById("eventEndTime").value || null);
+  const notes = document.getElementById("eventNotes").value.trim();
+  state.calendarEvents.push({
+    id:uid(), title, date, allDay, startTime, endTime, notes,
+    sourceType: eventModalSourceType, sourceId: eventModalSourceId
+  });
+  saveState();
+  closeEventModal();
+  toast("Added to calendar");
+  if(document.getElementById("screen-calendar").classList.contains("active")) renderCalendar();
 });
 
 /* ================= CHORES ================= */
@@ -3501,6 +4092,72 @@ function deleteChore(id){
   saveState();
   renderChores();
 }
+
+/* ---- Chore edit modal ---- */
+let choreEditingId = null;
+let choreEditAssignee = "me";
+function renderChoreEditAssigneeChips(){
+  const opts = [["me","Me"],["roommate","Roommate"],["split","Split (rotate)"]];
+  const container = document.getElementById("choreEditAssigneeChips");
+  container.innerHTML = "";
+  opts.forEach(([val,label])=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (choreEditAssignee===val ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", ()=>{ choreEditAssignee = val; renderChoreEditAssigneeChips(); });
+    container.appendChild(chip);
+  });
+}
+function openChoreEditModal(id){
+  const c = state.chores.find(x=>x.id===id);
+  if(!c) return;
+  choreEditingId = id;
+  document.getElementById("choreEditName").value = c.name;
+  choreEditAssignee = c.assignee || "me";
+  renderChoreEditAssigneeChips();
+  document.getElementById("choreEditRecurrence").value = c.recurrence || "none";
+  document.getElementById("choreEditCustomDaysRow").style.display = c.recurrence==="custom" ? "grid" : "none";
+  document.getElementById("choreEditCustomDays").value = c.customDays || "";
+  document.getElementById("choreEditDueDate").value = c.nextDueDate || todayISO();
+  document.getElementById("choreEditModalBackdrop").classList.add("open");
+}
+function closeChoreEditModal(){
+  document.getElementById("choreEditModalBackdrop").classList.remove("open");
+  choreEditingId = null;
+}
+document.getElementById("choreEditRecurrence").addEventListener("change", ()=>{
+  const val = document.getElementById("choreEditRecurrence").value;
+  document.getElementById("choreEditCustomDaysRow").style.display = val==="custom" ? "grid" : "none";
+});
+document.getElementById("choreEditCancelBtn").addEventListener("click", closeChoreEditModal);
+document.getElementById("choreEditModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="choreEditModalBackdrop") closeChoreEditModal(); });
+document.getElementById("choreEditDeleteBtn").addEventListener("click", ()=>{
+  if(!choreEditingId) return;
+  deleteChore(choreEditingId);
+  closeChoreEditModal();
+  toast("Chore deleted");
+});
+document.getElementById("choreEditSaveBtn").addEventListener("click", ()=>{
+  if(!choreEditingId) return;
+  const c = state.chores.find(x=>x.id===choreEditingId);
+  if(!c) return;
+  const name = document.getElementById("choreEditName").value.trim();
+  if(!name){ toast("Give it a name"); return; }
+  const recurrence = document.getElementById("choreEditRecurrence").value;
+  const customDays = recurrence==="custom" ? parseInt(document.getElementById("choreEditCustomDays").value,10) : null;
+  if(recurrence==="custom" && (!customDays || customDays<1)){ toast("Enter valid interval days"); return; }
+  const nextDueDate = document.getElementById("choreEditDueDate").value || c.nextDueDate || todayISO();
+  c.name = name;
+  c.assignee = choreEditAssignee;
+  c.recurrence = recurrence;
+  c.customDays = customDays;
+  c.nextDueDate = nextDueDate;
+  saveState();
+  closeChoreEditModal();
+  toast("Chore updated");
+  renderChores();
+});
 function renderChores(){
   const active = state.chores.filter(c=>!c.completed).sort((a,b)=>(a.nextDueDate||"").localeCompare(b.nextDueDate||""));
   const wrap = document.getElementById("choresList");
@@ -3515,14 +4172,16 @@ function renderChores(){
           <span class="assignee-pill ${c.assignee}">${OWNER_LABELS[c.assignee]||c.assignee}</span>
         </div>
         <div class="stat-sub" style="margin:6px 0 10px;">${recurLabel} &middot; due ${fmtDateShort(c.nextDueDate)}</div>
-        <div class="two-col">
+        <div class="two-col" style="grid-template-columns:1fr 1fr 1fr; gap:6px;">
+          <button class="btn ghost sm" data-edit-chore="${c.id}">Edit</button>
           <button class="btn ghost sm" data-del-chore="${c.id}">Delete</button>
-          <button class="btn accent sm" data-done-chore="${c.id}">Mark done</button>
+          <button class="btn accent sm" data-done-chore="${c.id}">Done</button>
         </div>
       </div>`;
     }).join("");
     wrap.querySelectorAll("[data-done-chore]").forEach(btn=>btn.addEventListener("click", ()=>markChoreDone(btn.dataset.doneChore)));
     wrap.querySelectorAll("[data-del-chore]").forEach(btn=>btn.addEventListener("click", ()=>deleteChore(btn.dataset.delChore)));
+    wrap.querySelectorAll("[data-edit-chore]").forEach(btn=>btn.addEventListener("click", ()=>openChoreEditModal(btn.dataset.editChore)));
   }
 
   const logEntries = [];
@@ -3546,71 +4205,116 @@ function renderChores(){
 /* ================= RECIPES ================= */
 let recipeEditingId = null;
 let recipeIngredientsDraft = [];
+let recipeTagFilters = new Set();
+let recipeSearchQuery = "";
+
+function openRecipeModal(){ document.getElementById("recipeModalBackdrop").classList.add("open"); }
+function closeRecipeModal(){ document.getElementById("recipeModalBackdrop").classList.remove("open"); }
+
+/* ---- ingredient sub-modal (dedicated add/edit view) ---- */
+let ingredientEditingIdx = null;
+function openIngredientModal(idx){
+  ingredientEditingIdx = (typeof idx === "number") ? idx : null;
+  const ing = ingredientEditingIdx!==null ? recipeIngredientsDraft[ingredientEditingIdx] : {name:"",qty:"",unit:"",cost:null,store:"",haveIt:false};
+  document.getElementById("ingredientModalTitle").textContent = ingredientEditingIdx!==null ? "Edit ingredient" : "Add ingredient";
+  document.getElementById("ingName").value = ing.name||"";
+  document.getElementById("ingQty").value = ing.qty||"";
+  document.getElementById("ingUnit").value = ing.unit||"";
+  document.getElementById("ingCost").value = (ing.cost===null||ing.cost===undefined) ? "" : ing.cost;
+  document.getElementById("ingStore").value = ing.store||"";
+  document.getElementById("ingHaveItToggle").classList.toggle("active", !!ing.haveIt);
+  document.getElementById("ingredientModalBackdrop").classList.add("open");
+}
+function closeIngredientModal(){ document.getElementById("ingredientModalBackdrop").classList.remove("open"); }
+document.getElementById("ingHaveItToggle").addEventListener("click", (e)=>{ e.currentTarget.classList.toggle("active"); });
+document.getElementById("ingredientCancelBtn").addEventListener("click", closeIngredientModal);
+document.getElementById("ingredientModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="ingredientModalBackdrop") closeIngredientModal(); });
+document.getElementById("ingredientSaveBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("ingName").value.trim();
+  if(!name){ toast("Give the ingredient a name"); return; }
+  const costRaw = document.getElementById("ingCost").value;
+  const entry = {
+    id: (ingredientEditingIdx!==null && recipeIngredientsDraft[ingredientEditingIdx].id) || uid(),
+    name,
+    qty: document.getElementById("ingQty").value.trim(),
+    unit: document.getElementById("ingUnit").value,
+    cost: costRaw!=="" ? parseFloat(costRaw) : null,
+    store: document.getElementById("ingStore").value.trim(),
+    haveIt: document.getElementById("ingHaveItToggle").classList.contains("active")
+  };
+  if(ingredientEditingIdx!==null) recipeIngredientsDraft[ingredientEditingIdx] = entry;
+  else recipeIngredientsDraft.push(entry);
+  renderIngredientsEditor();
+  closeIngredientModal();
+});
+
 function renderIngredientsEditor(){
   const wrap = document.getElementById("recipeIngredientsEditor");
   if(!recipeIngredientsDraft.length){
     wrap.innerHTML = '<div class="stat-sub">No ingredients yet.</div>';
     return;
   }
-  wrap.innerHTML = recipeIngredientsDraft.map((ing,idx)=>`
-    <div class="ingredient-row">
-      <input type="text" data-ing-name="${idx}" value="${escapeHtml(ing.name)}" placeholder="Ingredient">
-      <input type="text" data-ing-qty="${idx}" value="${escapeHtml(ing.qty||'')}" placeholder="Qty" style="width:70px; flex:none;">
-      <button type="button" class="chip ${ing.haveIt?'active':''}" data-ing-have="${idx}">Have it</button>
-      <button type="button" class="link-btn" data-ing-remove="${idx}">&times;</button>
-    </div>
-  `).join("");
-  wrap.querySelectorAll("[data-ing-name]").forEach(inp=>inp.addEventListener("input", ()=>{ recipeIngredientsDraft[+inp.dataset.ingName].name = inp.value; }));
-  wrap.querySelectorAll("[data-ing-qty]").forEach(inp=>inp.addEventListener("input", ()=>{ recipeIngredientsDraft[+inp.dataset.ingQty].qty = inp.value; }));
-  wrap.querySelectorAll("[data-ing-have]").forEach(btn=>btn.addEventListener("click", ()=>{ const i=+btn.dataset.ingHave; recipeIngredientsDraft[i].haveIt = !recipeIngredientsDraft[i].haveIt; renderIngredientsEditor(); }));
-  wrap.querySelectorAll("[data-ing-remove]").forEach(btn=>btn.addEventListener("click", ()=>{ recipeIngredientsDraft.splice(+btn.dataset.ingRemove,1); renderIngredientsEditor(); }));
+  wrap.innerHTML = recipeIngredientsDraft.map((ing,idx)=>{
+    const qtyBit = [ing.qty, ing.unit].filter(Boolean).join(" ");
+    const metaBits = [qtyBit, ing.cost!=null?money(ing.cost):"", ing.store||"", ing.haveIt?"have it":""].filter(Boolean);
+    return `<div class="ingredient-row">
+      <div class="ing-summary" data-ing-edit="${idx}">
+        <div>${escapeHtml(ing.name)}</div>
+        ${metaBits.length? `<div class="ing-meta">${metaBits.map(escapeHtml).join(" &middot; ")}</div>` : ""}
+      </div>
+      <button type="button" class="link-btn" data-ing-remove="${idx}">Remove</button>
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll("[data-ing-edit]").forEach(el=>el.addEventListener("click", ()=>openIngredientModal(+el.dataset.ingEdit)));
+  wrap.querySelectorAll("[data-ing-remove]").forEach(btn=>btn.addEventListener("click", (e)=>{ e.stopPropagation(); recipeIngredientsDraft.splice(+btn.dataset.ingRemove,1); renderIngredientsEditor(); }));
 }
-document.getElementById("recipeAddIngredientBtn").addEventListener("click", ()=>{
-  recipeIngredientsDraft.push({id:uid(), name:"", qty:"", haveIt:false});
-  renderIngredientsEditor();
-});
+document.getElementById("recipeAddIngredientBtn").addEventListener("click", ()=> openIngredientModal(null));
+
 function resetRecipeForm(){
   recipeEditingId = null;
   document.getElementById("recipeName").value = "";
   document.getElementById("recipeCookTime").value = "";
+  document.getElementById("recipeTags").value = "";
   document.getElementById("recipeInstructions").value = "";
   recipeIngredientsDraft = [];
   renderIngredientsEditor();
   document.getElementById("recipeFormTitle").textContent = "New recipe";
   document.getElementById("recipeSubmitBtn").textContent = "Save recipe";
-  document.getElementById("recipeSubmitBtn").style.gridColumn = "1/3";
-  document.getElementById("recipeCancelEditBtn").style.display = "none";
 }
 function loadRecipeIntoForm(r){
   recipeEditingId = r.id;
   document.getElementById("recipeName").value = r.name;
   document.getElementById("recipeCookTime").value = r.cookTime||"";
+  document.getElementById("recipeTags").value = (r.tags||[]).join(", ");
   document.getElementById("recipeInstructions").value = r.instructions||"";
   recipeIngredientsDraft = (r.ingredients||[]).map(i=>Object.assign({}, i));
   renderIngredientsEditor();
   document.getElementById("recipeFormTitle").textContent = "Edit recipe";
   document.getElementById("recipeSubmitBtn").textContent = "Save changes";
-  document.getElementById("recipeSubmitBtn").style.gridColumn = "2/3";
-  document.getElementById("recipeCancelEditBtn").style.display = "flex";
-  const mainEl = document.querySelector("main");
-  if(mainEl) mainEl.scrollTop = 0;
+  openRecipeModal();
 }
-document.getElementById("recipeCancelEditBtn").addEventListener("click", ()=>{ resetRecipeForm(); renderRecipes(); });
+document.getElementById("recipeNewBtn").addEventListener("click", ()=>{ resetRecipeForm(); openRecipeModal(); });
+document.getElementById("recipeCancelEditBtn").addEventListener("click", closeRecipeModal);
+document.getElementById("recipeModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="recipeModalBackdrop") closeRecipeModal(); });
 document.getElementById("recipeSubmitBtn").addEventListener("click", ()=>{
   const name = document.getElementById("recipeName").value.trim();
   if(!name){ toast("Give it a name"); return; }
   const cookTime = parseInt(document.getElementById("recipeCookTime").value,10) || null;
   const instructions = document.getElementById("recipeInstructions").value.trim();
-  const ingredients = recipeIngredientsDraft.filter(i=>i.name.trim()).map(i=>({id:i.id||uid(), name:i.name.trim(), qty:i.qty||"", haveIt:!!i.haveIt}));
+  const tags = document.getElementById("recipeTags").value.split(",").map(t=>t.trim()).filter(Boolean);
+  const ingredients = recipeIngredientsDraft.filter(i=>i.name.trim()).map(i=>({
+    id:i.id||uid(), name:i.name.trim(), qty:i.qty||"", unit:i.unit||"", cost:(i.cost===undefined?null:i.cost), store:i.store||"", haveIt:!!i.haveIt
+  }));
   if(recipeEditingId){
     const idx = state.recipes.findIndex(r=>r.id===recipeEditingId);
-    if(idx>-1) state.recipes[idx] = Object.assign({}, state.recipes[idx], {name, cookTime, instructions, ingredients});
+    if(idx>-1) state.recipes[idx] = Object.assign({}, state.recipes[idx], {name, cookTime, instructions, tags, ingredients});
     toast("Recipe updated");
   } else {
-    state.recipes.push({ id:uid(), name, cookTime, instructions, ingredients });
+    state.recipes.push({ id:uid(), name, cookTime, instructions, tags, ingredients });
     toast("Recipe saved");
   }
   saveState();
+  closeRecipeModal();
   resetRecipeForm();
   renderRecipes();
 });
@@ -3622,7 +4326,14 @@ function addMissingIngredientsToGroceryList(recipeId){
   (recipe.ingredients||[]).forEach(ing=>{
     if(ing.haveIt) return;
     if(existingNames.has(ing.name.toLowerCase())) return;
-    state.shoppingItems.push({ id:uid(), name:ing.name, price:null, unknownPrice:true, store:"", unknownStore:true, category:"Groceries", owner:"me", urgency:"none", byDate:null, checked:false, purchasedExpenseId:null });
+    const hasCost = ing.cost!=null && !isNaN(ing.cost);
+    const hasStore = !!(ing.store && ing.store.trim());
+    state.shoppingItems.push({
+      id:uid(), name:ing.name,
+      price: hasCost ? ing.cost : null, unknownPrice: !hasCost,
+      store: hasStore ? ing.store.trim() : "", unknownStore: !hasStore,
+      category:"Groceries", owner:"me", urgency:"none", byDate:null, checked:false, purchasedExpenseId:null
+    });
     existingNames.add(ing.name.toLowerCase());
     added++;
   });
@@ -3634,30 +4345,230 @@ function deleteRecipe(id){
   saveState();
   renderRecipes();
 }
+function allRecipeTags(){
+  const set = new Set();
+  state.recipes.forEach(r=>(r.tags||[]).forEach(t=>set.add(t)));
+  return Array.from(set).sort();
+}
+function renderRecipeTagFilterChips(){
+  const container = document.getElementById("recipeTagFilterChips");
+  const tags = allRecipeTags();
+  if(!tags.length){ container.innerHTML = ""; return; }
+  container.innerHTML = tags.map(t=>`<button type="button" class="chip ${recipeTagFilters.has(t)?'active':''}" data-recipe-tag-filter="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join("");
+  container.querySelectorAll("[data-recipe-tag-filter]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const t = btn.dataset.recipeTagFilter;
+      if(recipeTagFilters.has(t)) recipeTagFilters.delete(t); else recipeTagFilters.add(t);
+      renderRecipes();
+    });
+  });
+}
+document.getElementById("recipeSearch").addEventListener("input", (e)=>{ recipeSearchQuery = e.target.value.trim().toLowerCase(); renderRecipes(); });
 function renderRecipes(){
+  renderRecipeTagFilterChips();
   const wrap = document.getElementById("recipesList");
-  if(!state.recipes.length){
-    wrap.innerHTML = '<div class="empty-state">No recipes yet.</div>';
+  let list = state.recipes.slice();
+  if(recipeSearchQuery) list = list.filter(r=>r.name.toLowerCase().includes(recipeSearchQuery));
+  if(recipeTagFilters.size) list = list.filter(r=>(r.tags||[]).some(t=>recipeTagFilters.has(t)));
+  if(!list.length){
+    wrap.innerHTML = `<div class="empty-state">${state.recipes.length ? "No recipes match." : "No recipes yet."}</div>`;
     return;
   }
-  wrap.innerHTML = state.recipes.map(r=>{
+  wrap.innerHTML = list.map(r=>{
     const missing = (r.ingredients||[]).filter(i=>!i.haveIt).length;
+    const tagsRow = (r.tags||[]).length ? `<div class="recipe-tag-row">${(r.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join("")}</div>` : "";
     return `<div class="recipe-card">
       <div class="row">
         <div class="chore-name" data-edit-recipe="${r.id}">${escapeHtml(r.name)}</div>
         <div class="stat-sub">${r.cookTime?r.cookTime+" min":""}</div>
       </div>
+      ${tagsRow}
       <div class="stat-sub" style="margin:6px 0 10px;">${(r.ingredients||[]).length} ingredients &middot; ${missing} missing</div>
       <div class="two-col">
         <button class="btn ghost sm" data-del-recipe="${r.id}">Delete</button>
-        <button class="btn accent sm" data-add-missing="${r.id}">Add missing to list</button>
+        <button class="btn ghost sm" data-add-missing="${r.id}">Add to grocery list</button>
       </div>
+      <button class="btn accent sm block" data-add-mealprep="${r.id}" style="margin-top:8px;">+ Add to meal prep</button>
     </div>`;
   }).join("");
   wrap.querySelectorAll("[data-edit-recipe]").forEach(el=>el.addEventListener("click", ()=>{ const r=state.recipes.find(x=>x.id===el.dataset.editRecipe); if(r) loadRecipeIntoForm(r); }));
   wrap.querySelectorAll("[data-del-recipe]").forEach(btn=>btn.addEventListener("click", ()=>deleteRecipe(btn.dataset.delRecipe)));
   wrap.querySelectorAll("[data-add-missing]").forEach(btn=>btn.addEventListener("click", ()=>addMissingIngredientsToGroceryList(btn.dataset.addMissing)));
+  wrap.querySelectorAll("[data-add-mealprep]").forEach(btn=>btn.addEventListener("click", ()=>openMealPrepModal({ date: mealPrepSelectedDate || todayISO(), sourceType:"recipe", recipeId: btn.dataset.addMealprep })));
 }
+
+/* ================= RECIPES / MEAL PREP TAB SWITCH ================= */
+document.querySelectorAll("#recipesTabSeg button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll("#recipesTabSeg button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    const tab = b.dataset.recipetab;
+    document.getElementById("recipesPanel").style.display = tab==="recipes" ? "" : "none";
+    document.getElementById("mealPrepPanel").style.display = tab==="mealprep" ? "" : "none";
+    if(tab==="mealprep") renderMealPrepPanel();
+  });
+});
+function activateRecipesScreen(){
+  const activeTab = document.querySelector("#recipesTabSeg button.active");
+  const tab = activeTab ? activeTab.dataset.recipetab : "recipes";
+  if(tab==="mealprep") renderMealPrepPanel(); else renderRecipes();
+}
+
+/* ================= MEAL PREP ================= */
+const MEALPREP_SLOTS = [{key:"breakfast",label:"Breakfast"},{key:"lunch",label:"Lunch"},{key:"dinner",label:"Dinner"},{key:"snack",label:"Snack"}];
+let mealPrepSelectedDate = todayISO();
+document.getElementById("mealPrepDate").value = mealPrepSelectedDate;
+document.getElementById("mealPrepDate").addEventListener("change", (e)=>{
+  mealPrepSelectedDate = e.target.value || todayISO();
+  renderMealPrepPanel();
+});
+document.getElementById("mealPrepPrevDayBtn").addEventListener("click", ()=>{
+  mealPrepSelectedDate = addDaysISO(mealPrepSelectedDate, -1);
+  document.getElementById("mealPrepDate").value = mealPrepSelectedDate;
+  renderMealPrepPanel();
+});
+document.getElementById("mealPrepNextDayBtn").addEventListener("click", ()=>{
+  mealPrepSelectedDate = addDaysISO(mealPrepSelectedDate, 1);
+  document.getElementById("mealPrepDate").value = mealPrepSelectedDate;
+  renderMealPrepPanel();
+});
+
+function mealPrepEntryLabel(entry){
+  if(entry.sourceType==="recipe"){ const r=state.recipes.find(x=>x.id===entry.recipeId); return r ? r.name : "(deleted recipe)"; }
+  if(entry.sourceType==="venue"){ const v=state.diningVenues.find(x=>x.id===entry.venueId); return v ? v.name : "(deleted venue)"; }
+  return entry.freeformText || "(untitled)";
+}
+function renderMealPrepPanel(){
+  const wrap = document.getElementById("mealPrepSlots");
+  const entries = state.mealPrep.entries.filter(e=>e.date===mealPrepSelectedDate);
+  wrap.innerHTML = MEALPREP_SLOTS.map(slot=>{
+    const slotEntries = entries.filter(e=>e.slot===slot.key);
+    const rows = slotEntries.length ? slotEntries.map(e=>`
+      <div class="mealprep-entry ${e.completed?'completed':''}">
+        <div>
+          <div class="name">${escapeHtml(mealPrepEntryLabel(e))}</div>
+          ${e.notes ? `<div class="stat-sub">${escapeHtml(e.notes)}</div>` : ""}
+        </div>
+        <div class="row" style="gap:6px;">
+          <button type="button" class="link-btn" data-mp-complete="${e.id}">${e.completed?"Undo":"Done"}</button>
+          <button type="button" class="link-btn" data-mp-remove="${e.id}">Remove</button>
+        </div>
+      </div>`).join("") : `<div class="stat-sub">Nothing scheduled.</div>`;
+    return `<div class="mealprep-slot">
+      <div class="mealprep-slot-label">${slot.label}</div>
+      ${rows}
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll("[data-mp-complete]").forEach(btn=>btn.addEventListener("click", ()=>toggleMealPrepComplete(btn.dataset.mpComplete)));
+  wrap.querySelectorAll("[data-mp-remove]").forEach(btn=>btn.addEventListener("click", ()=>removeMealPrepEntry(btn.dataset.mpRemove)));
+}
+function toggleMealPrepComplete(id){
+  const e = state.mealPrep.entries.find(x=>x.id===id);
+  if(!e) return;
+  e.completed = !e.completed;
+  // Calendar Sync on Log: mark corresponding checklist item complete if this
+  // meal-prep entry was generated from (or is linked to) a scheduled item.
+  if(e.completed && e.linkedChecklistId){
+    const item = state.checklist.find(c=>c.id===e.linkedChecklistId);
+    if(item) item.done = true;
+  }
+  saveState();
+  renderMealPrepPanel();
+}
+function removeMealPrepEntry(id){
+  state.mealPrep.entries = state.mealPrep.entries.filter(e=>e.id!==id);
+  saveState();
+  renderMealPrepPanel();
+}
+
+/* ---- meal prep add modal ---- */
+let mealPrepSlotDraft = "breakfast";
+let mealPrepSourceDraft = "recipe";
+function renderMealPrepSlotChips(){
+  const container = document.getElementById("mealPrepSlotChips");
+  container.innerHTML = MEALPREP_SLOTS.map(s=>`<button type="button" class="chip ${s.key===mealPrepSlotDraft?'active':''}" data-mp-slot="${s.key}">${s.label}</button>`).join("");
+  container.querySelectorAll("[data-mp-slot]").forEach(chip=>{
+    chip.addEventListener("click", ()=>{ mealPrepSlotDraft = chip.dataset.mpSlot; renderMealPrepSlotChips(); });
+  });
+}
+function populateMealPrepSelects(){
+  const recipeSel = document.getElementById("mealPrepRecipeSelect");
+  recipeSel.innerHTML = state.recipes.length ? state.recipes.map(r=>`<option value="${r.id}">${escapeHtml(r.name)}</option>`).join("") : `<option value="">No recipes saved</option>`;
+  const venueSel = document.getElementById("mealPrepVenueSelect");
+  venueSel.innerHTML = state.diningVenues.length ? state.diningVenues.map(v=>`<option value="${v.id}">${escapeHtml(v.name)}</option>`).join("") : `<option value="">No venues saved</option>`;
+}
+function setMealPrepSource(src){
+  mealPrepSourceDraft = src;
+  document.querySelectorAll("#mealPrepSourceSeg button").forEach(b=>b.classList.toggle("active", b.dataset.source===src));
+  document.getElementById("mealPrepRecipeField").style.display = src==="recipe" ? "" : "none";
+  document.getElementById("mealPrepVenueField").style.display = src==="venue" ? "" : "none";
+  document.getElementById("mealPrepFreeformField").style.display = src==="freeform" ? "" : "none";
+}
+document.querySelectorAll("#mealPrepSourceSeg button").forEach(b=>b.addEventListener("click", ()=>setMealPrepSource(b.dataset.source)));
+function openMealPrepModal(opts){
+  opts = opts || {};
+  populateMealPrepSelects();
+  document.getElementById("mealPrepEntryDate").value = opts.date || mealPrepSelectedDate || todayISO();
+  mealPrepSlotDraft = opts.slot || "breakfast";
+  renderMealPrepSlotChips();
+  setMealPrepSource(opts.sourceType || "recipe");
+  if(opts.recipeId) document.getElementById("mealPrepRecipeSelect").value = opts.recipeId;
+  if(opts.venueId) document.getElementById("mealPrepVenueSelect").value = opts.venueId;
+  document.getElementById("mealPrepFreeformInput").value = "";
+  document.getElementById("mealPrepNotes").value = "";
+  document.getElementById("mealPrepModalBackdrop").classList.add("open");
+}
+function closeMealPrepModal(){ document.getElementById("mealPrepModalBackdrop").classList.remove("open"); }
+document.getElementById("mealPrepAddBtn").addEventListener("click", ()=> openMealPrepModal({ date: mealPrepSelectedDate }));
+document.getElementById("mealPrepCancelBtn").addEventListener("click", closeMealPrepModal);
+document.getElementById("mealPrepModalBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="mealPrepModalBackdrop") closeMealPrepModal(); });
+document.getElementById("mealPrepSaveBtn").addEventListener("click", ()=>{
+  const date = document.getElementById("mealPrepEntryDate").value || todayISO();
+  const entry = { id:uid(), date, slot: mealPrepSlotDraft, sourceType: mealPrepSourceDraft, notes: document.getElementById("mealPrepNotes").value.trim(), completed:false };
+  if(mealPrepSourceDraft==="recipe"){
+    entry.recipeId = document.getElementById("mealPrepRecipeSelect").value;
+    if(!entry.recipeId){ toast("Save a recipe first"); return; }
+  } else if(mealPrepSourceDraft==="venue"){
+    entry.venueId = document.getElementById("mealPrepVenueSelect").value;
+    if(!entry.venueId){ toast("Add a dining venue first"); return; }
+  } else {
+    entry.freeformText = document.getElementById("mealPrepFreeformInput").value.trim();
+    if(!entry.freeformText){ toast("Describe what you're eating"); return; }
+  }
+  state.mealPrep.entries.push(entry);
+  saveState();
+  closeMealPrepModal();
+  toast("Meal added");
+  renderMealPrepPanel();
+});
+function generateMealPrepShoppingList(){
+  const today = todayISO();
+  const horizon = addDaysISO(today, 7);
+  const upcoming = state.mealPrep.entries.filter(e=>!e.completed && e.sourceType==="recipe" && e.date>=today && e.date<=horizon);
+  const existingNames = new Set(state.shoppingItems.filter(i=>!i.checked).map(i=>i.name.toLowerCase()));
+  let added = 0;
+  upcoming.forEach(entry=>{
+    const recipe = state.recipes.find(r=>r.id===entry.recipeId);
+    if(!recipe) return;
+    (recipe.ingredients||[]).forEach(ing=>{
+      if(ing.haveIt) return;
+      if(existingNames.has(ing.name.toLowerCase())) return;
+      const hasCost = ing.cost!=null && !isNaN(ing.cost);
+      const hasStore = !!(ing.store && ing.store.trim());
+      state.shoppingItems.push({
+        id:uid(), name:ing.name,
+        price: hasCost ? ing.cost : null, unknownPrice: !hasCost,
+        store: hasStore ? ing.store.trim() : "", unknownStore: !hasStore,
+        category:"Groceries", owner:"me", urgency:"none", byDate:null, checked:false, purchasedExpenseId:null
+      });
+      existingNames.add(ing.name.toLowerCase());
+      added++;
+    });
+  });
+  saveState();
+  toast(added ? `Added ${added} item${added===1?'':'s'} to grocery list` : "Nothing missing for the week ahead!");
+}
+document.getElementById("mealPrepGenerateShopBtn").addEventListener("click", generateMealPrepShoppingList);
 
 /* ================= DINING VENUES / DIRECTORY ================= */
 document.getElementById("venueSubmitBtn").addEventListener("click", ()=>{
@@ -3702,6 +4613,52 @@ document.getElementById("venueImportBtn").addEventListener("click", ()=>{
     toast("Invalid JSON");
   }
 });
+function addVenueMeal(venueId){
+  const v = state.diningVenues.find(x=>x.id===venueId);
+  if(!v) return;
+  const nameEl = document.getElementById("vmName-"+venueId);
+  const costEl = document.getElementById("vmCost-"+venueId);
+  const notesEl = document.getElementById("vmNotes-"+venueId);
+  const name = nameEl.value.trim();
+  const cost = parseFloat(costEl.value);
+  const notes = notesEl.value.trim();
+  if(!name){ toast("Give the item a name"); return; }
+  if(isNaN(cost) || cost<0){ toast("Enter a cost"); return; }
+  v.meals = v.meals || [];
+  v.meals.push({ id:uid(), name, cost, notes });
+  saveState();
+  toast("Meal added to "+v.name);
+  renderVenues();
+}
+function logVenueMeal(venueId, mealId){
+  const v = state.diningVenues.find(x=>x.id===venueId);
+  const meal = v && (v.meals||[]).find(m=>m.id===mealId);
+  if(!meal) return;
+  const date = todayISO();
+  state.diningDollars.transactions.push({ id:uid(), name: v.name+" \u2014 "+meal.name, cost: meal.cost, date });
+  syncMealLoggedForDate(date);
+  saveState();
+  toast("Logged "+meal.name);
+  renderVenues();
+  if(document.getElementById("screen-dining").classList.contains("active")) renderDining();
+}
+function saveVenueMealAsFavorite(venueId, mealId){
+  const v = state.diningVenues.find(x=>x.id===venueId);
+  const meal = v && (v.meals||[]).find(m=>m.id===mealId);
+  if(!meal) return;
+  state.diningDollars.favorites.push({ id:uid(), name: v.name+" \u2014 "+meal.name, cost: meal.cost });
+  saveState();
+  toast("Saved to favorites");
+  renderFavoriteChipsInto("favoritesChipRow", null);
+  renderFavoriteChipsInto("diningFavChipRow","diningFavEmpty");
+}
+function removeVenueMeal(venueId, mealId){
+  const v = state.diningVenues.find(x=>x.id===venueId);
+  if(!v) return;
+  v.meals = (v.meals||[]).filter(m=>m.id!==mealId);
+  saveState();
+  renderVenues();
+}
 function renderVenues(){
   renderFavoriteChipsInto("favoritesChipRow", null);
   const wrap = document.getElementById("venuesList");
@@ -3709,7 +4666,22 @@ function renderVenues(){
     wrap.innerHTML = '<div class="empty-state">No venues added yet.</div>';
     return;
   }
-  wrap.innerHTML = state.diningVenues.map(v=>`
+  wrap.innerHTML = state.diningVenues.map(v=>{
+    const meals = v.meals || [];
+    const mealsHtml = meals.length ? meals.map(m=>`
+      <div class="mealprep-entry">
+        <div>
+          <div class="name">${escapeHtml(m.name)}</div>
+          <div class="stat-sub">${money(m.cost)}${m.notes?(" &middot; "+escapeHtml(m.notes)):""}</div>
+        </div>
+        <div class="row" style="gap:6px;">
+          <button type="button" class="link-btn" data-log-venue-meal="${v.id}|${m.id}">Log</button>
+          <button type="button" class="link-btn" data-fav-venue-meal="${v.id}|${m.id}">Save fav</button>
+          <button type="button" class="link-btn" data-del-venue-meal="${v.id}|${m.id}">Remove</button>
+        </div>
+      </div>
+    `).join("") : `<div class="stat-sub">No meals logged for this spot yet.</div>`;
+    return `
     <div class="venue-card">
       <div class="row">
         <div class="chore-name">${escapeHtml(v.name)}</div>
@@ -3717,9 +4689,23 @@ function renderVenues(){
       </div>
       <div class="venue-hours">${v.open?fmtTime12(v.open):'?'} &ndash; ${v.close?fmtTime12(v.close):'?'}</div>
       <div class="note-tags" style="margin-top:6px;">${(v.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join("")}</div>
-    </div>
-  `).join("");
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);">
+        <div class="stat-label" style="margin-bottom:6px;">Meals at this spot</div>
+        ${mealsHtml}
+        <div class="two-col" style="margin-top:8px;">
+          <input type="text" id="vmName-${v.id}" placeholder="Item name&hellip;" autocomplete="off" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:9px 10px; font-size:13px; color:var(--ink);">
+          <input type="number" inputmode="decimal" id="vmCost-${v.id}" placeholder="Cost" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:9px 10px; font-size:13px; color:var(--ink);">
+        </div>
+        <input type="text" id="vmNotes-${v.id}" placeholder="Notes (optional)&hellip;" autocomplete="off" style="width:100%; margin-top:6px; background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:9px 10px; font-size:13px; color:var(--ink);">
+        <button type="button" class="btn ghost sm block" data-add-venue-meal="${v.id}" style="margin-top:6px;">+ Add meal</button>
+      </div>
+    </div>`;
+  }).join("");
   wrap.querySelectorAll("[data-del-venue]").forEach(btn=>btn.addEventListener("click", ()=>deleteVenue(btn.dataset.delVenue)));
+  wrap.querySelectorAll("[data-add-venue-meal]").forEach(btn=>btn.addEventListener("click", ()=>addVenueMeal(btn.dataset.addVenueMeal)));
+  wrap.querySelectorAll("[data-log-venue-meal]").forEach(btn=>btn.addEventListener("click", ()=>{ const [vid,mid]=btn.dataset.logVenueMeal.split("|"); logVenueMeal(vid,mid); }));
+  wrap.querySelectorAll("[data-fav-venue-meal]").forEach(btn=>btn.addEventListener("click", ()=>{ const [vid,mid]=btn.dataset.favVenueMeal.split("|"); saveVenueMealAsFavorite(vid,mid); }));
+  wrap.querySelectorAll("[data-del-venue-meal]").forEach(btn=>btn.addEventListener("click", ()=>{ const [vid,mid]=btn.dataset.delVenueMeal.split("|"); removeVenueMeal(vid,mid); }));
 }
 
 /* ================= NOTIFICATIONS ================= */
@@ -3868,6 +4854,8 @@ function init(){
   document.getElementById("diningTxDate").value = todayISO();
   refreshQaChips();
   resetShopForm();
+  renderChoreAssigneeChips();
+  bindCardOptionToggles();
   renderHome();
 }
 init();
