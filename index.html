@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Tally &mdash; Daily Ledger</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onload="window.__onChartReady&&window.__onChartReady();" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';s.onload=function(){window.__onChartReady&&window.__onChartReady();};document.head.appendChild(s);"></script>
 <style>
   /* ============ TOKENS ============ */
   :root{
@@ -53,6 +53,7 @@
   html,body{
     height:100vh;
     height:100dvh;
+    height:var(--app-height, 100dvh);
     overscroll-behavior:none;
   }
   body{
@@ -70,6 +71,7 @@
     width:100%;
     height:100vh;
     height:100dvh;
+    height:var(--app-height, 100dvh);
   }
   .selectable-text, .selectable-text *{
     user-select:text;
@@ -108,6 +110,7 @@
     inset:0;
     height:100vh;
     height:100dvh;
+    height:var(--app-height, 100dvh);
     display:flex;
     flex-direction:column;
     background:var(--paper);
@@ -132,12 +135,23 @@
     color:var(--ink-dim);
     font-family:var(--font-mono);
   }
+  header.topbar .back-btn{
+    display:none;
+    align-items:center;
+    gap:4px;
+    color:var(--accent);
+    font-weight:700;
+    font-size:14px;
+  }
+  header.topbar.sub-active .back-btn{ display:flex; }
+  header.topbar.sub-active .brand{ display:none; }
 
   main{
     flex:1;
     min-height:0;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
+    padding-bottom: var(--nav-height, 84px);
   }
   .screen{ display:none; padding: 16px 16px 8px; animation:fadein .18s ease; }
   .screen.active{ display:block; }
@@ -145,13 +159,14 @@
 
   /* ============ TAB BAR ============ */
   nav.tabbar{
-    flex-shrink:0;
+    position:fixed;
+    left:0; right:0; bottom:0;
+    width:100%;
     display:flex;
     background-color:var(--paper-raised);
     border-top:1px solid var(--line);
-    padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
-    z-index:10;
+    padding: 8px 2px max(8px, env(safe-area-inset-bottom));
+    z-index:1000;
   }
   nav.tabbar button{
     flex:1;
@@ -166,11 +181,11 @@
     -webkit-user-select:none;
   }
   nav.tabbar button.active{ color:var(--accent); }
-  nav.tabbar button svg{ width:21px; height:21px; }
-  nav.tabbar button .lbl{ font-size:9.5px; font-weight:600; letter-spacing:0.01em; }
+  nav.tabbar button svg{ width:20px; height:20px; }
+  nav.tabbar button .lbl{ font-size:9px; font-weight:600; letter-spacing:0.01em; }
   @media (max-width:380px){
-    nav.tabbar button .lbl{ font-size:8.5px; }
-    nav.tabbar button svg{ width:19px; height:19px; }
+    nav.tabbar button .lbl{ font-size:8px; }
+    nav.tabbar button svg{ width:18px; height:18px; }
   }
 
   /* ============ CARDS / PRIMITIVES ============ */
@@ -468,12 +483,124 @@
   }
   .badge-pair{ display:flex; gap:10px; }
   .badge-pair > div{ flex:1; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-m); padding:12px; text-align:center; }
+
+  /* ============ MORE HUB ============ */
+  .hub-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .hub-tile{
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m);
+    padding:16px 12px; display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+    text-align:left; color:var(--ink);
+  }
+  .hub-tile svg{ width:22px; height:22px; color:var(--accent); }
+  .hub-tile .hub-title{ font-weight:700; font-size:14px; }
+  .hub-tile .hub-sub{ font-size:11.5px; color:var(--ink-dim); }
+
+  /* ============ TOGGLE SWITCH ============ */
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px dashed var(--line); gap:10px; }
+  .toggle-row:first-of-type{ border-top:none; }
+  .toggle-row .toggle-label{ font-size:13.5px; font-weight:600; flex:1; }
+  .switch{ position:relative; width:42px; height:25px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; position:absolute; }
+  .switch .track{
+    position:absolute; inset:0; background:var(--line-strong); border-radius:999px; transition:background .15s ease;
+  }
+  .switch .track::after{
+    content:""; position:absolute; width:19px; height:19px; left:3px; top:3px; background:#fff; border-radius:50%;
+    transition:transform .15s ease; box-shadow:0 1px 2px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .track{ background:var(--accent); }
+  .switch input:checked + .track::after{ transform:translateX(17px); }
+
+  /* ============ CHECKLIST ============ */
+  .check-item{
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m);
+    padding:12px 14px; margin-bottom:9px;
+  }
+  .check-item.done{ opacity:0.5; }
+  .check-item.done .check-title{ text-decoration:line-through; }
+  .check-item-top{ display:flex; align-items:flex-start; gap:10px; }
+  .check-title{ font-size:15px; font-weight:600; flex:1; }
+  .check-meta{ font-size:11.5px; color:var(--ink-dim); margin-top:3px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .urgency-pill.low{ background:var(--green-soft); color:var(--green); }
+  .urgency-pill.med{ background:var(--accent-soft); color:var(--accent); }
+  .urgency-pill.high{ background:var(--red-soft); color:var(--red); }
+  .subtask-row{ display:flex; align-items:center; gap:8px; padding:5px 0 5px 30px; font-size:13px; }
+  .subtask-row.done{ opacity:0.5; text-decoration:line-through; }
+  .reorder-btns{ display:flex; flex-direction:column; gap:2px; }
+  .reorder-btns button{ font-size:11px; color:var(--ink-faint); padding:1px 4px; }
+  .search-box{
+    background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+    padding:10px 12px; font-size:14px; color:var(--ink); width:100%; margin-bottom:12px;
+  }
+
+  /* ============ SLEEP ============ */
+  .star-row{ display:flex; gap:4px; }
+  .star-btn{ font-size:22px; color:var(--line-strong); }
+  .star-btn.filled{ color:var(--accent); }
+  .sleep-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px dashed var(--line); font-size:13px; }
+  .sleep-row:first-of-type{ border-top:none; }
+
+  /* ============ NOTES ============ */
+  .note-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
+  .note-title{ font-weight:700; font-size:15px; margin-bottom:4px; }
+  .note-body{ font-size:13px; color:var(--ink-dim); line-height:1.5; white-space:pre-wrap; margin-bottom:8px; }
+  .note-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+  .note-tag{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:99px; background:var(--accent-soft); color:var(--accent); }
+  .note-date{ font-size:10.5px; color:var(--ink-faint); font-family:var(--font-mono); margin-top:6px; }
+
+  /* ============ CALENDAR ============ */
+  .cal-header-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-nav-btn{ font-size:20px; color:var(--accent); font-weight:700; padding:4px 10px; }
+  .cal-month-label{ font-weight:700; font-size:15px; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-dow{ text-align:center; font-size:10px; font-weight:700; color:var(--ink-dim); padding-bottom:4px; }
+  .cal-day{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:var(--radius-s); font-size:12px; font-weight:600; position:relative; color:var(--ink);
+    background:var(--paper);
+  }
+  .cal-day.other-month{ color:var(--ink-faint); opacity:0.4; }
+  .cal-day.today{ outline:2px solid var(--accent); }
+  .cal-day.selected{ background:var(--ink); color:var(--paper); }
+  .cal-day .dot-row{ display:flex; gap:2px; margin-top:2px; }
+  .cal-day .evt-dot{ width:4px; height:4px; border-radius:50%; }
+  .cal-agenda-item{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px dashed var(--line); font-size:13px; }
+  .cal-agenda-item:first-of-type{ border-top:none; }
+  .cal-agenda-item .evt-dot-lg{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* ============ CHORES ============ */
+  .chore-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
+  .chore-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .chore-name{ font-weight:700; font-size:15px; }
+  .assignee-pill{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:99px; }
+  .assignee-pill.me{ background:var(--accent-soft); color:var(--accent); }
+  .assignee-pill.roommate{ background:var(--green-soft); color:var(--green); }
+  .assignee-pill.split{ background:var(--red-soft); color:var(--red); }
+
+  /* ============ RECIPES ============ */
+  .recipe-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
+  .ingredient-row{ display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px dashed var(--line); font-size:13px; }
+  .ingredient-row:first-of-type{ border-top:none; }
+  .ingredient-row input[type="text"]{ flex:1; background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:8px 10px; font-size:13px; color:var(--ink); }
+
+  /* ============ DINING VENUES / FAVORITES ============ */
+  .venue-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
+  .venue-hours{ font-family:var(--font-mono); font-size:12px; color:var(--ink-dim); }
+  .fav-chip{
+    padding:9px 14px; border-radius:var(--radius-m); background:var(--accent-soft); color:var(--accent);
+    font-size:13px; font-weight:700; white-space:nowrap;
+  }
+  .fav-chip .fav-price{ font-family:var(--font-mono); font-weight:600; margin-left:6px; opacity:0.8; }
+
+  /* ============ SEGMENTED (tri-split etc reuse .segmented, add narrow variant) ============ */
+  .segmented.tri button{ font-size:11.5px; padding:8px 2px; }
 </style>
 </head>
 <body>
 <div id="app">
-  <header class="topbar">
+  <header class="topbar" id="topbar">
     <div class="brand">Tally<span>.</span></div>
+    <button class="back-btn" id="backBtn">&lsaquo; More</button>
     <div class="date-today" id="todayLabel"></div>
   </header>
 
@@ -624,6 +751,25 @@
           <div class="field"><label>Starting balance</label><input type="number" inputmode="decimal" id="diningStartInput" placeholder="0.00"></div>
           <button class="btn ghost" id="diningSetBalanceBtn">Set balance</button>
         </div>
+        <div class="two-col" style="margin-top:10px; align-items:end;">
+          <div class="field"><label>Semester ends</label><input type="date" id="diningSemesterEnd"></div>
+          <button class="btn ghost" id="diningSetSemesterBtn">Save</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Daily target velocity</h2>
+        <div class="badge-pair" style="margin-bottom:10px;">
+          <div><div class="stat-label">scheduled-day budget</div><div class="stat-big" id="velScheduledAllowance" style="font-size:22px;">&mdash;</div></div>
+          <div><div class="stat-label">off-day budget</div><div class="stat-big" id="velOffAllowance" style="font-size:22px;">&mdash;</div></div>
+        </div>
+        <div class="stat-sub" id="velDetail">Set a semester end date above for accurate daily math.</div>
+      </div>
+
+      <div class="card">
+        <h2>Favorite orders</h2>
+        <div class="chip-row" id="diningFavChipRow"></div>
+        <div class="stat-sub" id="diningFavEmpty" style="margin-top:4px;">Log a transaction below, then tap "Save as favorite" to quick-log it next time.</div>
       </div>
 
       <div class="card">
@@ -632,7 +778,10 @@
           <div class="field"><label>Name</label><input type="text" id="diningTxName" placeholder="Sandwich, smoothie&hellip;" autocomplete="off"></div>
           <div class="field"><label>Cost</label><input type="number" inputmode="decimal" id="diningTxCost" placeholder="0.00"></div>
           <div class="field"><label>Date</label><input type="date" id="diningTxDate"></div>
-          <button class="btn accent block" id="diningTxSubmit">Log transaction</button>
+          <div class="two-col">
+            <button class="btn ghost" id="diningSaveFavBtn">Save as favorite</button>
+            <button class="btn accent" id="diningTxSubmit">Log transaction</button>
+          </div>
         </div>
       </div>
 
@@ -698,6 +847,10 @@
             <div class="chip-row" id="shopCategoryChips"></div>
           </div>
           <div class="field">
+            <label>Whose item?</label>
+            <div class="chip-row" id="shopOwnerChips"></div>
+          </div>
+          <div class="field">
             <label>Urgency</label>
             <div class="chip-row" id="shopUrgencyChips"></div>
             <input type="date" id="shopByDate" style="margin-top:8px; display:none;">
@@ -711,6 +864,12 @@
 
       <div class="card">
         <h2>Shopping list</h2>
+        <div class="segmented tri" id="shopOwnerFilterSeg" style="margin-bottom:10px;">
+          <button data-owner="" class="active">All</button>
+          <button data-owner="me">My Stuff</button>
+          <button data-owner="roommate">Roommate's</button>
+          <button data-owner="split">Split</button>
+        </div>
         <div class="two-col" style="margin-bottom:10px;">
           <div class="field">
             <label>Sort by</label>
@@ -738,9 +897,42 @@
         <div class="segmented" id="shareRangeSeg">
           <button data-range="week" class="active">Week</button>
           <button data-range="month">Month</button>
+          <button data-range="custom">Custom</button>
         </div>
-        <div class="share-canvas-wrap" style="margin-top:12px;">
-          <canvas id="shareCanvas" width="680" height="860"></canvas>
+        <div class="two-col" id="shareCustomRangeRow" style="margin-top:10px; display:none;">
+          <div class="field"><label>From</label><input type="date" id="shareCustomFrom"></div>
+          <div class="field"><label>To</label><input type="date" id="shareCustomTo"></div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="toggle-row">
+            <div class="toggle-label">List individual purchases</div>
+            <label class="switch"><input type="checkbox" id="cardOptPurchases" checked><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">Category pie chart</div>
+            <label class="switch"><input type="checkbox" id="cardOptPie" checked><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">Active budget limit</div>
+            <label class="switch"><input type="checkbox" id="cardOptBudget"><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">Dining Dollars stats</div>
+            <label class="switch"><input type="checkbox" id="cardOptDining"><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">Weekly meal plan</div>
+            <label class="switch"><input type="checkbox" id="cardOptMeals"><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">Sleep metrics</div>
+            <label class="switch"><input type="checkbox" id="cardOptSleep"><span class="track"></span></label>
+          </div>
+        </div>
+
+        <div class="share-canvas-wrap" style="margin-top:14px;">
+          <canvas id="shareCanvas" width="680" height="1040"></canvas>
         </div>
         <button class="btn ghost block" id="downloadCardBtn">Save image</button>
       </div>
@@ -770,6 +962,264 @@
           <input type="text" id="newCatName" placeholder="New category" style="grid-column:1/2; background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:10px; font-size:14px; color:var(--ink);">
           <button class="btn sm" id="addCatBtn">Add</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ===================== MORE HUB ===================== -->
+    <section class="screen" id="screen-more">
+      <div class="hub-grid">
+        <button class="hub-tile" data-hub="checklist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4M5 12v7a2 2 0 0 0 2 2h11"/></svg>
+          <div class="hub-title">Checklist</div>
+          <div class="hub-sub">Reminders &amp; to-dos</div>
+        </button>
+        <button class="hub-tile" data-hub="sleep">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.5A8.5 8.5 0 1 1 11.5 3 7 7 0 0 0 21 12.5z"/></svg>
+          <div class="hub-title">Sleep</div>
+          <div class="hub-sub">Track rest &amp; trends</div>
+        </button>
+        <button class="hub-tile" data-hub="notes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>
+          <div class="hub-title">Notes</div>
+          <div class="hub-sub">Tagged &amp; searchable</div>
+        </button>
+        <button class="hub-tile" data-hub="calendar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <div class="hub-title">Calendar</div>
+          <div class="hub-sub">Chores, meals &amp; more</div>
+        </button>
+        <button class="hub-tile" data-hub="chores">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l4 4M14 6l6-2-2 6-8 8-4-4 8-8z"/><path d="M4 20l4-4"/></svg>
+          <div class="hub-title">Chores</div>
+          <div class="hub-sub">Split &amp; rotate tasks</div>
+        </button>
+        <button class="hub-tile" data-hub="recipes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3v7a3 3 0 0 0 6 0V3M9 10v11M18 3c-1.2 1.5-2 3-2 5.5S16.8 12 18 12v9"/></svg>
+          <div class="hub-title">Recipes</div>
+          <div class="hub-sub">Meals &amp; groceries</div>
+        </button>
+        <button class="hub-tile" data-hub="venues" style="grid-column:1/3;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-6 9 6M4 10v10h16V10"/></svg>
+          <div class="hub-title">Dining Spots</div>
+          <div class="hub-sub">Campus venues, hours &amp; favorites</div>
+        </button>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2>Notifications</h2>
+        <div class="stat-sub" style="margin-bottom:10px;">Get alerts for due reminders, chores, and low balances while this tab is open.</div>
+        <button class="btn ghost block" id="enableNotifBtn">Enable notifications</button>
+        <div class="stat-sub" id="notifStatus" style="margin-top:8px;"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CHECKLIST ===================== -->
+    <section class="screen" id="screen-checklist">
+      <div class="card">
+        <h2 id="checkFormTitle">New reminder</h2>
+        <div class="stack">
+          <div class="field"><label>Title</label><input type="text" id="checkTitle" placeholder="Renew parking pass&hellip;" autocomplete="off"></div>
+          <div class="field">
+            <label>Subtasks</label>
+            <div id="checkSubtasksEditor" class="stack"></div>
+            <button class="btn ghost sm" id="checkAddSubtaskBtn" style="margin-top:6px;">+ Add subtask</button>
+          </div>
+          <div class="field">
+            <label>Urgency</label>
+            <div class="chip-row" id="checkUrgencyChips"></div>
+          </div>
+          <div class="two-col">
+            <div class="field"><label>Due date</label><input type="date" id="checkDueDate"></div>
+            <div class="field"><label>Due time</label><input type="time" id="checkDueTime"></div>
+          </div>
+          <div class="field">
+            <label>Repeat</label>
+            <select id="checkRepeat">
+              <option value="none">Doesn't repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="two-col">
+            <button class="btn ghost" id="checkCancelEditBtn" style="display:none;">Cancel</button>
+            <button class="btn accent block" id="checkSubmitBtn" style="grid-column:1/3;">Add reminder</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <input type="text" class="search-box" id="checkSearch" placeholder="Search reminders&hellip;">
+        <div id="checklistList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SLEEP ===================== -->
+    <section class="screen" id="screen-sleep">
+      <div class="card">
+        <h2>This week</h2>
+        <div class="row">
+          <div><div class="stat-label">avg duration</div><div class="stat-big" id="sleepAvgDuration" style="font-size:26px;">&mdash;</div></div>
+          <div style="text-align:right;"><div class="stat-label">avg quality</div><div class="stat-big" id="sleepAvgQuality" style="font-size:26px;">&mdash;</div></div>
+        </div>
+        <canvas class="chart-canvas" id="sleepChart" style="margin-top:12px;"></canvas>
+      </div>
+      <div class="card">
+        <h2>Log sleep</h2>
+        <div class="stack">
+          <div class="two-col">
+            <div class="field"><label>Bedtime</label><input type="time" id="sleepBedtime"></div>
+            <div class="field"><label>Wake time</label><input type="time" id="sleepWaketime"></div>
+          </div>
+          <div class="field"><label>Date woke up</label><input type="date" id="sleepWakeDate"></div>
+          <div class="field">
+            <label>Quality</label>
+            <div class="star-row" id="sleepQualityStars">
+              <button class="star-btn" data-star="1">&#9733;</button>
+              <button class="star-btn" data-star="2">&#9733;</button>
+              <button class="star-btn" data-star="3">&#9733;</button>
+              <button class="star-btn" data-star="4">&#9733;</button>
+              <button class="star-btn" data-star="5">&#9733;</button>
+            </div>
+          </div>
+          <button class="btn accent block" id="sleepSubmitBtn">Log sleep</button>
+        </div>
+      </div>
+      <div class="card" style="padding-bottom:6px;">
+        <h2>Recent logs</h2>
+        <div id="sleepList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== NOTES ===================== -->
+    <section class="screen" id="screen-notes">
+      <div class="card">
+        <h2 id="noteFormTitle">New note</h2>
+        <div class="stack">
+          <div class="field"><label>Title</label><input type="text" id="noteTitle" placeholder="Note title&hellip;" autocomplete="off"></div>
+          <div class="field"><label>Body</label><textarea class="export-text" style="min-height:100px;" id="noteBody" placeholder="Write it down&hellip;"></textarea></div>
+          <div class="field"><label>Category</label><div class="chip-row" id="noteCategoryChips"></div></div>
+          <div class="field"><label>Tags (comma separated)</label><input type="text" id="noteTags" placeholder="urgent, roommate, apartment&hellip;" autocomplete="off"></div>
+          <div class="two-col">
+            <button class="btn ghost" id="noteCancelEditBtn" style="display:none;">Cancel</button>
+            <button class="btn accent block" id="noteSubmitBtn" style="grid-column:1/3;">Save note</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <input type="text" class="search-box" id="noteSearch" placeholder="Search notes&hellip;">
+        <div class="two-col" style="margin-bottom:12px;">
+          <div class="field"><label>Filter category</label><select id="noteCategoryFilter"><option value="">All</option></select></div>
+          <div class="field"><label>Sort by</label><select id="noteSortSelect"><option value="updated">Last updated</option><option value="created">Date created</option></select></div>
+        </div>
+        <div id="notesList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CALENDAR ===================== -->
+    <section class="screen" id="screen-calendar">
+      <div class="card">
+        <div class="cal-header-row">
+          <button class="cal-nav-btn" id="calPrevBtn">&lsaquo;</button>
+          <div class="cal-month-label" id="calMonthLabel"></div>
+          <button class="cal-nav-btn" id="calNextBtn">&rsaquo;</button>
+        </div>
+        <div class="cal-grid" id="calDowRow"></div>
+        <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
+      </div>
+      <div class="card">
+        <h2 id="calAgendaTitle">Today</h2>
+        <div id="calAgenda"></div>
+        <button class="btn ghost block" id="calExportIcsBtn" style="margin-top:12px;">Download .ics for upcoming events</button>
+      </div>
+    </section>
+
+    <!-- ===================== CHORES ===================== -->
+    <section class="screen" id="screen-chores">
+      <div class="card">
+        <h2>Add a chore</h2>
+        <div class="stack">
+          <div class="field"><label>Chore</label><input type="text" id="choreName" placeholder="Take out trash&hellip;" autocomplete="off"></div>
+          <div class="field"><label>Assigned to</label><div class="chip-row" id="choreAssigneeChips"></div></div>
+          <div class="field">
+            <label>Recurrence</label>
+            <select id="choreRecurrence">
+              <option value="none">One-time</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="custom">Every N days</option>
+            </select>
+          </div>
+          <div class="two-col" id="choreCustomDaysRow" style="display:none;">
+            <div class="field"><label>Every N days</label><input type="number" inputmode="numeric" id="choreCustomDays" placeholder="3"></div>
+            <div class="field"><label>Starting</label><input type="date" id="choreStartDate"></div>
+          </div>
+          <div class="field" id="choreDueRow"><label>Next due</label><input type="date" id="choreDueDate"></div>
+          <button class="btn accent block" id="choreSubmitBtn">Add chore</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Chores</h2>
+        <div id="choresList"></div>
+      </div>
+      <div class="card">
+        <h2>Recent completions</h2>
+        <div id="choreRotationLog"></div>
+      </div>
+    </section>
+
+    <!-- ===================== RECIPES ===================== -->
+    <section class="screen" id="screen-recipes">
+      <div class="card">
+        <h2 id="recipeFormTitle">New recipe</h2>
+        <div class="stack">
+          <div class="field"><label>Name</label><input type="text" id="recipeName" placeholder="Chicken stir-fry&hellip;" autocomplete="off"></div>
+          <div class="field"><label>Cook time (minutes)</label><input type="number" inputmode="numeric" id="recipeCookTime" placeholder="25"></div>
+          <div class="field">
+            <label>Ingredients</label>
+            <div id="recipeIngredientsEditor" class="stack"></div>
+            <button class="btn ghost sm" id="recipeAddIngredientBtn" style="margin-top:6px;">+ Add ingredient</button>
+          </div>
+          <div class="field"><label>Instructions (optional)</label><textarea class="export-text" style="min-height:80px;" id="recipeInstructions"></textarea></div>
+          <div class="two-col">
+            <button class="btn ghost" id="recipeCancelEditBtn" style="display:none;">Cancel</button>
+            <button class="btn accent block" id="recipeSubmitBtn" style="grid-column:1/3;">Save recipe</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Your recipes</h2>
+        <div id="recipesList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== DINING VENUES / FAVORITES ===================== -->
+    <section class="screen" id="screen-venues">
+      <div class="card">
+        <h2>Favorite orders</h2>
+        <div class="stat-sub" style="margin-bottom:10px;">Save a dining transaction as a favorite from the Dining tab, then quick-log it here.</div>
+        <div class="chip-row" id="favoritesChipRow"></div>
+      </div>
+      <div class="card">
+        <h2 id="venueFormTitle">Add a dining venue</h2>
+        <div class="stack">
+          <div class="field"><label>Name</label><input type="text" id="venueName" placeholder="North Dining Hall&hellip;" autocomplete="off"></div>
+          <div class="two-col">
+            <div class="field"><label>Opens</label><input type="time" id="venueOpen"></div>
+            <div class="field"><label>Closes</label><input type="time" id="venueClose"></div>
+          </div>
+          <div class="field"><label>Dietary tags (comma separated)</label><input type="text" id="venueTags" placeholder="vegan, halal, gluten-free&hellip;" autocomplete="off"></div>
+          <button class="btn accent block" id="venueSubmitBtn">Add venue</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Venues</h2>
+        <div id="venuesList"></div>
+      </div>
+      <div class="card">
+        <h2>Import menu data</h2>
+        <div class="stat-sub" style="margin-bottom:8px;">Paste a JSON array of venues like <span class="selectable-text">[{"name":"...","open":"08:00","close":"20:00","tags":["vegan"]}]</span> to bulk-import.</div>
+        <textarea class="export-text" id="venueImportText" placeholder="Paste JSON here&hellip;"></textarea>
+        <button class="btn ghost block" id="venueImportBtn" style="margin-top:10px;">Import</button>
       </div>
     </section>
   </main>
@@ -805,6 +1255,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       <span class="lbl">Share</span>
     </button>
+    <button class="tab-btn" data-screen="more">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+      <span class="lbl">More</span>
+    </button>
   </nav>
 </div>
 
@@ -839,8 +1293,27 @@
 (function(){
 "use strict";
 
-/* ================= STATE / STORAGE ================= */
-const LS_KEY = "tally.v1";
+/* ================= VIEWPORT HEIGHT SYNC (iOS Safari fixed-nav jump fix) ================= */
+function syncAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+}
+function syncNavHeight(){
+  const nav = document.querySelector('nav.tabbar');
+  if(nav && nav.offsetHeight) document.documentElement.style.setProperty('--nav-height', nav.offsetHeight + 'px');
+}
+syncAppHeight();
+window.addEventListener('resize', ()=>{ syncAppHeight(); syncNavHeight(); });
+window.addEventListener('orientationchange', ()=>{ syncAppHeight(); setTimeout(()=>{ syncAppHeight(); syncNavHeight(); },300); });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', syncAppHeight);
+  window.visualViewport.addEventListener('scroll', syncAppHeight);
+}
+window.addEventListener('load', ()=>{ syncAppHeight(); syncNavHeight(); });
+
+/* ================= STATE / STORAGE (schema tally.v2) ================= */
+const LS_KEY_V1 = "tally.v1";
+const LS_KEY = "tally.v2";
 const DEFAULT_CATEGORIES = [
   {name:"Food", color:"#B4632B"},
   {name:"Transport", color:"#3F6B4E"},
@@ -850,6 +1323,7 @@ const DEFAULT_CATEGORIES = [
   {name:"Other", color:"#726C60"}
 ];
 const SHOPPING_CATEGORIES = ["Groceries","Household","Tech","Personal Care","Other"];
+const NOTE_CATEGORIES = ["Apartment","School","Roommate","Personal","Other"];
 const PALETTE = ["#B4632B","#3F6B4E","#7A6E4E","#8A4B7A","#3B6E8F","#B33B2C","#6B7A3B","#A0522D"];
 const WEEKDAY_KEYS = ["sun","mon","tue","wed","thu","fri","sat"];
 const WEEKDAY_LABELS = {sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat"};
@@ -863,33 +1337,67 @@ function defaultSchedule(){
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
-function loadState(){
-  try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      parsed.expenses = parsed.expenses || [];
-      parsed.categories = parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES.slice();
-      parsed.budgets = parsed.budgets || [];
-      parsed.diningDollars = parsed.diningDollars || { startingBalance:0, transactions:[] };
-      parsed.mealPlan = parsed.mealPlan || { schedule: defaultSchedule(), log:{}, extraBanked:0 };
-      parsed.mealPlan.schedule = parsed.mealPlan.schedule || defaultSchedule();
-      parsed.mealPlan.log = parsed.mealPlan.log || {};
-      parsed.mealPlan.extraBanked = parsed.mealPlan.extraBanked || 0;
-      parsed.shoppingItems = parsed.shoppingItems || [];
-      parsed.itemCatalog = parsed.itemCatalog || [];
-      return parsed;
-    }
-  }catch(e){ console.warn("load failed", e); }
+function freshState(){
   return {
+    schemaVersion: 2,
     expenses:[],
     categories: DEFAULT_CATEGORIES.slice(),
     budgets:[],
-    diningDollars: { startingBalance:0, transactions:[] },
+    diningDollars: { startingBalance:0, transactions:[], semesterEnd:null, favorites:[] },
     mealPlan: { schedule: defaultSchedule(), log:{}, extraBanked:0 },
     shoppingItems:[],
-    itemCatalog:[]
+    itemCatalog:[],
+    checklist:[],
+    sleepLogs:[],
+    notes:[],
+    chores:[],
+    recipes:[],
+    diningVenues:[],
+    cardOptions: { purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false },
+    notifiedKeys:[]
   };
+}
+
+function normalizeState(parsed){
+  const fresh = freshState();
+  const out = Object.assign({}, fresh, parsed);
+  out.expenses = parsed.expenses || [];
+  out.categories = parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES.slice();
+  out.budgets = parsed.budgets || [];
+  out.diningDollars = Object.assign({ startingBalance:0, transactions:[], semesterEnd:null, favorites:[] }, parsed.diningDollars || {});
+  out.mealPlan = Object.assign({ schedule: defaultSchedule(), log:{}, extraBanked:0 }, parsed.mealPlan || {});
+  out.mealPlan.schedule = out.mealPlan.schedule || defaultSchedule();
+  out.mealPlan.log = out.mealPlan.log || {};
+  out.mealPlan.extraBanked = out.mealPlan.extraBanked || 0;
+  out.shoppingItems = (parsed.shoppingItems || []).map(i=> Object.assign({owner:"me"}, i));
+  out.itemCatalog = parsed.itemCatalog || [];
+  out.checklist = parsed.checklist || [];
+  out.sleepLogs = parsed.sleepLogs || [];
+  out.notes = parsed.notes || [];
+  out.chores = parsed.chores || [];
+  out.recipes = parsed.recipes || [];
+  out.diningVenues = parsed.diningVenues || [];
+  out.cardOptions = Object.assign({ purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false }, parsed.cardOptions || {});
+  out.notifiedKeys = parsed.notifiedKeys || [];
+  out.schemaVersion = 2;
+  return out;
+}
+
+function loadState(){
+  try{
+    const rawV2 = localStorage.getItem(LS_KEY);
+    if(rawV2){
+      return normalizeState(JSON.parse(rawV2));
+    }
+    // Migrate from v1 if present
+    const rawV1 = localStorage.getItem(LS_KEY_V1);
+    if(rawV1){
+      const migrated = normalizeState(JSON.parse(rawV1));
+      localStorage.setItem(LS_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+  }catch(e){ console.warn("load failed", e); }
+  return freshState();
 }
 let state = loadState();
 function saveState(){
@@ -915,7 +1423,12 @@ function parseDate(iso){
   return new Date(y, m-1, d);
 }
 function daysBetweenInclusive(a,b){
-  const ms = parseDate(b) - parseDate(a);
+  // Compare using UTC calendar components (not local-midnight ms diffs) so
+  // ranges spanning a DST transition (23h/25h days) never round to the
+  // wrong day count.
+  const [ay,am,ad] = a.split("-").map(Number);
+  const [by,bm,bd] = b.split("-").map(Number);
+  const ms = Date.UTC(by,bm-1,bd) - Date.UTC(ay,am-1,ad);
   return Math.round(ms/86400000)+1;
 }
 function fmtDateShort(iso){
@@ -994,14 +1507,18 @@ function sumExpenses(list){
 }
 
 /* ================= NAVIGATION ================= */
-const screens = ["home","list","stats","budget","dining","shop","data"];
+const TAB_SCREENS = ["home","list","stats","budget","dining","shop","data","more"];
+const HUB_SCREENS = ["checklist","sleep","notes","calendar","chores","recipes","venues"];
+const screens = TAB_SCREENS.concat(HUB_SCREENS);
 function showScreen(name){
   screens.forEach(s=>{
     document.getElementById("screen-"+s).classList.toggle("active", s===name);
   });
+  const isHub = HUB_SCREENS.includes(name);
   document.querySelectorAll(".tab-btn").forEach(b=>{
-    b.classList.toggle("active", b.dataset.screen===name);
+    b.classList.toggle("active", b.dataset.screen===name || (isHub && b.dataset.screen==="more"));
   });
+  document.getElementById("topbar").classList.toggle("sub-active", isHub);
   if(name==="list") renderList();
   if(name==="stats") renderStats();
   if(name==="budget") renderBudget();
@@ -1009,10 +1526,21 @@ function showScreen(name){
   if(name==="shop") renderShop();
   if(name==="data") renderData();
   if(name==="home") renderHome();
+  if(name==="checklist") renderChecklist();
+  if(name==="sleep") renderSleep();
+  if(name==="notes") renderNotes();
+  if(name==="calendar") renderCalendar();
+  if(name==="chores") renderChores();
+  if(name==="recipes") renderRecipes();
+  if(name==="venues") renderVenues();
 }
 document.querySelectorAll(".tab-btn").forEach(b=>{
   b.addEventListener("click", ()=>showScreen(b.dataset.screen));
 });
+document.querySelectorAll("[data-hub]").forEach(b=>{
+  b.addEventListener("click", ()=>showScreen(b.dataset.hub));
+});
+document.getElementById("backBtn").addEventListener("click", ()=>showScreen("more"));
 
 /* ================= HOME / QUICK ADD ================= */
 function renderCategoryChips(container, selected, onSelect){
@@ -1427,6 +1955,97 @@ document.getElementById("diningSetBalanceBtn").addEventListener("click", ()=>{
   renderDining();
 });
 
+document.getElementById("diningSetSemesterBtn").addEventListener("click", ()=>{
+  const v = document.getElementById("diningSemesterEnd").value;
+  if(!v){ toast("Pick a date"); return; }
+  state.diningDollars.semesterEnd = v;
+  saveState();
+  toast("Semester end saved");
+  renderDining();
+});
+
+function computeDiningVelocity(){
+  const sem = state.diningDollars.semesterEnd;
+  const today = todayISO();
+  if(!sem || sem < today){
+    return null;
+  }
+  const remaining = diningRemainingAmt();
+  const daysRemaining = daysBetweenInclusive(today, sem);
+  let scheduledDaysRemaining = 0;
+  let cursor = today, guard = 0;
+  while(cursor <= sem && guard < 400){
+    const wk = WEEKDAY_KEYS[parseDate(cursor).getDay()];
+    const sched = state.mealPlan.schedule[wk];
+    const hasMeals = sched.b || sched.l || sched.d;
+    if(hasMeals) scheduledDaysRemaining++;
+    cursor = addDaysISO(cursor,1);
+    guard++;
+  }
+  const offDaysRemaining = Math.max(0, daysRemaining - scheduledDaysRemaining);
+  // Banked meal swipes can cover some scheduled days without needing dining dollars
+  const bankedCoverageDays = Math.min(state.mealPlan.extraBanked, scheduledDaysRemaining);
+  const effectiveScheduledDays = Math.max(0, scheduledDaysRemaining - bankedCoverageDays);
+
+  const weightScheduled = 1.4, weightOff = 0.6;
+  const totalWeight = (effectiveScheduledDays*weightScheduled) + (offDaysRemaining*weightOff);
+  const perUnit = totalWeight>0 ? remaining/totalWeight : 0;
+  const scheduledDayAllowance = perUnit*weightScheduled;
+  const offDayAllowance = perUnit*weightOff;
+
+  return { daysRemaining, scheduledDaysRemaining, offDaysRemaining, bankedCoverageDays, scheduledDayAllowance, offDayAllowance, remaining };
+}
+
+function renderDiningVelocity(){
+  const v = computeDiningVelocity();
+  const schEl = document.getElementById("velScheduledAllowance");
+  const offEl = document.getElementById("velOffAllowance");
+  const detailEl = document.getElementById("velDetail");
+  if(!v){
+    schEl.textContent = "\u2014";
+    offEl.textContent = "\u2014";
+    detailEl.textContent = "Set a semester end date above for accurate daily math.";
+    return;
+  }
+  schEl.textContent = money(v.scheduledDayAllowance);
+  offEl.textContent = money(v.offDayAllowance);
+  detailEl.textContent = `${v.daysRemaining} days left \u00b7 ${v.scheduledDaysRemaining} scheduled, ${v.offDaysRemaining} off-days \u00b7 ${v.bankedCoverageDays} covered by banked meals`;
+}
+
+document.getElementById("diningSaveFavBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("diningTxName").value.trim();
+  const cost = parseFloat(document.getElementById("diningTxCost").value);
+  if(!name){ toast("Enter a name first"); return; }
+  if(isNaN(cost) || cost<=0){ toast("Enter a cost first"); return; }
+  state.diningDollars.favorites.push({id:uid(), name, cost});
+  saveState();
+  toast("Saved as favorite");
+  renderDiningFavorites();
+});
+
+function renderDiningFavorites(){
+  const wrap = document.getElementById("diningFavChipRow");
+  const empty = document.getElementById("diningFavEmpty");
+  const favs = state.diningDollars.favorites || [];
+  if(!favs.length){
+    wrap.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  wrap.innerHTML = favs.map(f=>`<button type="button" class="fav-chip" data-fav-log="${f.id}">${escapeHtml(f.name)}<span class="fav-price">${money(f.cost)}</span></button>`).join("");
+  wrap.querySelectorAll("[data-fav-log]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const fav = favs.find(f=>f.id===btn.dataset.favLog);
+      if(!fav) return;
+      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date: todayISO()});
+      saveState();
+      toast("Logged "+fav.name);
+      renderDining();
+    });
+  });
+}
+
 document.getElementById("diningTxSubmit").addEventListener("click", ()=>{
   const name = document.getElementById("diningTxName").value.trim();
   const cost = parseFloat(document.getElementById("diningTxCost").value);
@@ -1592,7 +2211,10 @@ function renderDining(){
   bar.style.width = pct+"%";
   bar.classList.toggle("over", spent>bal && bal>0);
   document.getElementById("diningStartInput").value = state.diningDollars.startingBalance || "";
+  document.getElementById("diningSemesterEnd").value = state.diningDollars.semesterEnd || "";
   if(!document.getElementById("diningTxDate").value) document.getElementById("diningTxDate").value = todayISO();
+  renderDiningVelocity();
+  renderDiningFavorites();
   renderDiningTxList();
   renderMealPlan();
 }
@@ -1603,6 +2225,9 @@ let shopUnknownPrice = false;
 let shopAnyStore = false;
 let shopCategory = SHOPPING_CATEGORIES[0];
 let shopUrgency = "none";
+let shopOwner = "me";
+let shopOwnerFilter = "";
+const OWNER_LABELS = {me:"Me", roommate:"Roommate", split:"Split"};
 
 function renderStringChips(container, options, selected, onSelect){
   container.innerHTML = "";
@@ -1635,6 +2260,19 @@ function renderShopUrgencyChips(){
       document.getElementById("shopByDate").style.display = val==="by" ? "block" : "none";
       renderShopUrgencyChips();
     });
+    container.appendChild(chip);
+  });
+}
+function renderShopOwnerChips(){
+  const opts = [["me","Me"],["roommate","Roommate"],["split","Split"]];
+  const container = document.getElementById("shopOwnerChips");
+  container.innerHTML = "";
+  opts.forEach(([val,label])=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (shopOwner===val ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", ()=>{ shopOwner = val; renderShopOwnerChips(); });
     container.appendChild(chip);
   });
 }
@@ -1729,6 +2367,7 @@ document.getElementById("shopSubmitBtn").addEventListener("click", ()=>{
     store,
     unknownStore: shopAnyStore,
     category: shopCategory,
+    owner: shopOwner,
     urgency: shopUrgency,
     byDate
   };
@@ -1764,10 +2403,12 @@ function resetShopForm(){
   document.getElementById("shopUnknownPriceToggle").classList.remove("active");
   document.getElementById("shopAnyStoreToggle").classList.remove("active");
   shopCategory = SHOPPING_CATEGORIES[0];
+  shopOwner = "me";
   shopUrgency = "none";
   document.getElementById("shopByDate").value = "";
   document.getElementById("shopByDate").style.display = "none";
   renderShopCategoryChips();
+  renderShopOwnerChips();
   renderShopUrgencyChips();
   document.getElementById("shopFormTitle").textContent = "Add shopping item";
   document.getElementById("shopSubmitBtn").textContent = "Add item";
@@ -1787,10 +2428,12 @@ function loadItemIntoForm(item){
   document.getElementById("shopStore").disabled = shopAnyStore;
   document.getElementById("shopStore").value = item.store || "";
   shopCategory = item.category || SHOPPING_CATEGORIES[0];
+  shopOwner = item.owner || "me";
   shopUrgency = item.urgency || "none";
   document.getElementById("shopByDate").value = item.byDate || "";
   document.getElementById("shopByDate").style.display = shopUrgency==="by" ? "block" : "none";
   renderShopCategoryChips();
+  renderShopOwnerChips();
   renderShopUrgencyChips();
   document.getElementById("shopFormTitle").textContent = "Edit item";
   document.getElementById("shopSubmitBtn").textContent = "Save changes";
@@ -1802,6 +2445,14 @@ function loadItemIntoForm(item){
 
 document.getElementById("shopSortSelect").addEventListener("change", renderShop);
 document.getElementById("shopStoreFilter").addEventListener("change", renderShop);
+document.querySelectorAll("#shopOwnerFilterSeg button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll("#shopOwnerFilterSeg button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    shopOwnerFilter = b.dataset.owner;
+    renderShop();
+  });
+});
 document.getElementById("shopClearCheckedBtn").addEventListener("click", ()=>{
   state.shoppingItems = state.shoppingItems.filter(i=>!i.checked);
   saveState();
@@ -1825,6 +2476,7 @@ function renderShop(){
   let items = state.shoppingItems.slice();
   const filterStore = storeFilterSel.value;
   if(filterStore) items = items.filter(i=>i.store===filterStore);
+  if(shopOwnerFilter) items = items.filter(i=>(i.owner||"me")===shopOwnerFilter);
 
   const sortBy = document.getElementById("shopSortSelect").value;
   items.sort((a,b)=>{
@@ -1855,7 +2507,19 @@ function renderShop(){
       : (item.urgency==="by" && item.byDate) ? `<span class="urgency-pill byd">By ${fmtDateShort(item.byDate)}</span>` : "";
     const priceText = (item.unknownPrice || item.price==null) ? "Price TBD" : money(item.price);
     const storeText = (item.unknownStore || !item.store) ? "Any store" : escapeHtml(item.store);
-    const logBtn = (item.checked && !item.purchasedExpenseId) ? `<div class="shop-log-btn" data-log-expense="${item.id}">Log as expense &rsaquo;</div>` : "";
+    const owner = item.owner || "me";
+    const ownerBadge = `<span class="assignee-pill ${owner}">${OWNER_LABELS[owner]}</span>`;
+    let logBtn = "";
+    if(item.checked && !item.purchasedExpenseId){
+      if(owner==="split"){
+        logBtn = `<div style="display:flex; gap:6px; margin-top:8px;">
+          <div class="shop-log-btn" data-log-expense="${item.id}" data-split-mode="full">Log full &rsaquo;</div>
+          <div class="shop-log-btn" data-log-expense="${item.id}" data-split-mode="half">Log my half &rsaquo;</div>
+        </div>`;
+      } else {
+        logBtn = `<div class="shop-log-btn" data-log-expense="${item.id}" data-split-mode="full">Log as expense &rsaquo;</div>`;
+      }
+    }
     return `<div class="shop-row ${item.checked?'checked':''}" data-id="${item.id}">
       <div class="shop-check ${item.checked?'checked':''}" data-shop-check="${item.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
       <div class="shop-main" data-shop-edit="${item.id}">
@@ -1863,6 +2527,7 @@ function renderShop(){
         <div class="shop-meta">
           <span class="tx-dot" style="background:${shopCategoryColor(item.category)}"></span>${escapeHtml(item.category)}
           &middot; ${storeText}
+          ${ownerBadge}
           ${urgencyBadge}
         </div>
         <div class="shop-price">${priceText}</div>
@@ -1890,6 +2555,7 @@ function renderShop(){
     btn.addEventListener("click", (e)=>{
       e.stopPropagation();
       const id = btn.dataset.logExpense;
+      const splitMode = btn.dataset.splitMode || "full";
       const it = state.shoppingItems.find(i=>i.id===id);
       if(!it) return;
       if(it.unknownPrice || it.price==null){ toast("Set a price first"); return; }
@@ -1897,7 +2563,9 @@ function renderShop(){
         const color = PALETTE[state.categories.length % PALETTE.length];
         state.categories.push({name:it.category, color});
       }
-      const exp = addExpense({ name:it.name, price:it.price, category:it.category, date: todayISO(), time: nowTimeISO() });
+      const amount = splitMode==="half" ? Math.round((it.price/2)*100)/100 : it.price;
+      const nameSuffix = splitMode==="half" ? " (my half, split)" : (it.owner==="split" ? " (split, full)" : "");
+      const exp = addExpense({ name:it.name+nameSuffix, price:amount, category:it.category, date: todayISO(), time: nowTimeISO() });
       it.purchasedExpenseId = exp.id;
       saveState();
       toast("Logged as expense");
@@ -1948,11 +2616,39 @@ document.querySelectorAll("#shareRangeSeg button").forEach(b=>{
     document.querySelectorAll("#shareRangeSeg button").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
     shareRange = b.dataset.range;
+    document.getElementById("shareCustomRangeRow").style.display = shareRange==="custom" ? "grid" : "none";
     renderData();
   });
 });
+document.getElementById("shareCustomFrom").addEventListener("change", renderData);
+document.getElementById("shareCustomTo").addEventListener("change", renderData);
 
-function buildTextSummary(from, to, list){
+const CARD_OPT_IDS = {
+  purchases:"cardOptPurchases", pie:"cardOptPie", budget:"cardOptBudget",
+  dining:"cardOptDining", meals:"cardOptMeals", sleep:"cardOptSleep"
+};
+function bindCardOptionToggles(){
+  Object.keys(CARD_OPT_IDS).forEach(key=>{
+    const el = document.getElementById(CARD_OPT_IDS[key]);
+    el.checked = !!state.cardOptions[key];
+    el.addEventListener("change", ()=>{
+      state.cardOptions[key] = el.checked;
+      saveState();
+      renderData();
+    });
+  });
+}
+
+function getShareRangeDates(){
+  const today = todayISO();
+  if(shareRange==="week") return [startOfWeek(today), endOfWeek(today)];
+  if(shareRange==="month") return [startOfMonth(today), endOfMonth(today)];
+  const from = document.getElementById("shareCustomFrom").value || today;
+  const to = document.getElementById("shareCustomTo").value || today;
+  return [from, to];
+}
+
+function buildTextSummary(from, to, list, opts){
   const total = sumExpenses(list);
   const byCat = {};
   list.forEach(e=>{ byCat[e.category] = (byCat[e.category]||0)+Number(e.price); });
@@ -1967,16 +2663,46 @@ function buildTextSummary(from, to, list){
     const pct = total>0 ? Math.round(byCat[name]/total*100) : 0;
     out += (name+" ("+pct+"%)").padEnd(18," ") + money(byCat[name]).padStart(10," ") + "\n";
   });
+  if(opts.purchases && list.length){
+    out += "\nPURCHASES\n";
+    list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).forEach(e=>{
+      out += (fmtDateShort(e.date)+" "+e.name).padEnd(28," ").slice(0,28) + money(e.price).padStart(10," ") + "\n";
+    });
+  }
+  if(opts.budget){
+    const active = getActiveBudget(todayISO());
+    if(active){
+      const { remaining } = budgetMath(active, todayISO());
+      out += "\nBUDGET\n" + `${active.type} limit `.padEnd(18," ") + money(active.amount).padStart(10," ") + "\n";
+      out += "remaining".padEnd(18," ") + money(remaining).padStart(10," ") + "\n";
+    }
+  }
+  if(opts.dining){
+    out += "\nDINING DOLLARS\n";
+    out += "remaining".padEnd(18," ") + money(diningRemainingAmt()).padStart(10," ") + "\n";
+  }
+  if(opts.meals){
+    const stats = computeMealWeekStats(todayISO());
+    out += "\nMEAL PLAN\n";
+    out += "meals left this week".padEnd(24," ") + String(stats.mealsLeftThisWeek).padStart(4," ") + "\n";
+    out += "banked extra meals".padEnd(24," ") + String(state.mealPlan.extraBanked).padStart(4," ") + "\n";
+  }
+  if(opts.sleep){
+    const sleepStats = computeSleepWeekStats();
+    out += "\nSLEEP\n";
+    out += "avg duration".padEnd(24," ") + (sleepStats.avgDuration!=null ? sleepStats.avgDuration.toFixed(1)+"h" : "\u2014").padStart(6," ") + "\n";
+    out += "avg quality".padEnd(24," ") + (sleepStats.avgQuality!=null ? sleepStats.avgQuality.toFixed(1)+"/5" : "\u2014").padStart(6," ") + "\n";
+  }
   out += "\n" + list.length + " transaction" + (list.length===1?"":"s") + "\n";
   return out;
 }
 
 function renderData(){
-  const today = todayISO();
-  const [from, to] = shareRange==="week" ? [startOfWeek(today), endOfWeek(today)] : [startOfMonth(today), endOfMonth(today)];
+  const [from, to] = getShareRangeDates();
   const list = expensesInRange(from, to);
-  document.getElementById("textSummary").value = buildTextSummary(from, to, list);
-  drawShareCanvas(from, to, list);
+  const opts = state.cardOptions;
+  document.getElementById("textSummary").value = buildTextSummary(from, to, list, opts);
+  drawShareCanvas(from, to, list, opts);
   renderCategoryManager();
 }
 
@@ -1992,10 +2718,11 @@ document.getElementById("copyTextBtn").addEventListener("click", ()=>{
   window.getSelection().removeAllRanges();
 });
 
-function drawShareCanvas(from, to, list){
+function drawShareCanvas(from, to, list, opts){
   const canvas = document.getElementById("shareCanvas");
   const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const W = 680; // logical (CSS-pixel) width; backing store is scaled by dpr below
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const paper = dark ? "#17140F" : "#F6F3EB";
   const ink = dark ? "#EFE9DC" : "#211E1A";
@@ -2003,10 +2730,36 @@ function drawShareCanvas(from, to, list){
   const line = dark ? "#332D22" : "#D8D2C2";
   const accent = dark ? "#E0A05B" : "#B4632B";
 
+  // First pass: measure content height needed, then resize canvas.
+  let y = 70;
+  const sectionsHeights = [];
+  const total = sumExpenses(list);
+  const byCat = {};
+  list.forEach(e=>{ byCat[e.category] = (byCat[e.category]||0)+Number(e.price); });
+  const catNames = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).slice(0,6);
+
+  y = 236; // header + total block fixed height
+  if(opts.pie && catNames.length) y += 260;
+  y += 20 + catNames.length*60; // category bars
+  if(opts.purchases && list.length) y += 40 + Math.min(list.length,10)*30;
+  if(opts.budget) y += 90;
+  if(opts.dining) y += 70;
+  if(opts.meals) y += 70;
+  if(opts.sleep) y += 70;
+  y += 50;
+  const H = Math.max(860, y);
+
+  // Size the backing store for the device's pixel ratio so exported/shared
+  // images stay crisp on Retina/high-DPI screens. #shareCanvas's CSS
+  // (width:100%; max-width:340px; height:auto) keeps the on-screen size
+  // correct from the width:height ratio, so we don't touch inline style here.
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   ctx.fillStyle = paper;
   ctx.fillRect(0,0,W,H);
 
-  // header
   ctx.fillStyle = ink;
   ctx.font = "700 34px -apple-system, sans-serif";
   ctx.fillText("Tally", 40, 70);
@@ -2023,7 +2776,6 @@ function drawShareCanvas(from, to, list){
   ctx.beginPath(); ctx.moveTo(40,124); ctx.lineTo(W-40,124); ctx.stroke();
   ctx.setLineDash([]);
 
-  const total = sumExpenses(list);
   ctx.fillStyle = ink;
   ctx.font = "700 64px SFMono-Regular, Menlo, monospace";
   ctx.fillText(money(total), 40, 210);
@@ -2031,32 +2783,99 @@ function drawShareCanvas(from, to, list){
   ctx.font = "500 16px -apple-system, sans-serif";
   ctx.fillText("TOTAL SPENT \u00B7 "+list.length+" TRANSACTIONS", 40, 236);
 
-  // category bars
-  const byCat = {};
-  list.forEach(e=>{ byCat[e.category] = (byCat[e.category]||0)+Number(e.price); });
-  const catNames = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).slice(0,6);
+  let cursorY = 280;
 
-  let y = 300;
+  if(opts.pie && catNames.length){
+    const cx = W/2, cy = cursorY+100, r = 95;
+    let startAngle = -Math.PI/2;
+    catNames.forEach(name=>{
+      const slice = (byCat[name]/total) * Math.PI*2;
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,startAngle,startAngle+slice);
+      ctx.closePath();
+      ctx.fillStyle = categoryColor(name);
+      ctx.fill();
+      startAngle += slice;
+    });
+    ctx.beginPath();
+    ctx.arc(cx,cy,r*0.55,0,Math.PI*2);
+    ctx.fillStyle = paper;
+    ctx.fill();
+    cursorY += 240;
+  }
+
   ctx.font = "600 20px -apple-system, sans-serif";
   catNames.forEach(name=>{
     const val = byCat[name];
     const pct = total>0 ? val/total : 0;
     ctx.fillStyle = ink;
     ctx.font = "600 20px -apple-system, sans-serif";
-    ctx.fillText(name, 40, y);
+    ctx.fillText(name, 40, cursorY);
     ctx.font = "600 20px SFMono-Regular, Menlo, monospace";
     const valText = money(val);
     const tw = ctx.measureText(valText).width;
-    ctx.fillText(valText, W-40-tw, y);
-    y += 14;
+    ctx.fillText(valText, W-40-tw, cursorY);
+    cursorY += 14;
     ctx.strokeStyle = line;
     ctx.lineWidth = 10;
     ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-40,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(40,cursorY); ctx.lineTo(W-40,cursorY); ctx.stroke();
     ctx.strokeStyle = categoryColor(name);
-    ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(40+(W-80)*pct,y); ctx.stroke();
-    y += 46;
+    ctx.beginPath(); ctx.moveTo(40,cursorY); ctx.lineTo(40+(W-80)*pct,cursorY); ctx.stroke();
+    cursorY += 46;
   });
+
+  function drawSectionHeader(label){
+    cursorY += 14;
+    ctx.fillStyle = inkDim;
+    ctx.font = "700 13px -apple-system, sans-serif";
+    ctx.fillText(label.toUpperCase(), 40, cursorY);
+    cursorY += 20;
+  }
+  function drawKV(k,v){
+    ctx.fillStyle = ink;
+    ctx.font = "600 17px -apple-system, sans-serif";
+    ctx.fillText(k, 40, cursorY);
+    ctx.font = "600 17px SFMono-Regular, Menlo, monospace";
+    const tw = ctx.measureText(v).width;
+    ctx.fillText(v, W-40-tw, cursorY);
+    cursorY += 26;
+  }
+
+  if(opts.purchases && list.length){
+    drawSectionHeader("Purchases");
+    list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,10).forEach(e=>{
+      drawKV(fmtDateShort(e.date)+" "+e.name, money(e.price));
+    });
+  }
+  if(opts.budget){
+    const active = getActiveBudget(todayISO());
+    drawSectionHeader("Budget");
+    if(active){
+      const { remaining } = budgetMath(active, todayISO());
+      drawKV(active.type+" limit", money(active.amount));
+      drawKV("remaining", money(remaining));
+    } else {
+      drawKV("status","no active budget");
+    }
+  }
+  if(opts.dining){
+    drawSectionHeader("Dining Dollars");
+    drawKV("remaining", money(diningRemainingAmt()));
+  }
+  if(opts.meals){
+    const stats = computeMealWeekStats(todayISO());
+    drawSectionHeader("Meal plan");
+    drawKV("meals left this week", String(stats.mealsLeftThisWeek));
+    drawKV("banked extra meals", String(state.mealPlan.extraBanked));
+  }
+  if(opts.sleep){
+    const sleepStats = computeSleepWeekStats();
+    drawSectionHeader("Sleep");
+    drawKV("avg duration", sleepStats.avgDuration!=null ? sleepStats.avgDuration.toFixed(1)+"h" : "\u2014");
+    drawKV("avg quality", sleepStats.avgQuality!=null ? sleepStats.avgQuality.toFixed(1)+"/5" : "\u2014");
+  }
 
   ctx.fillStyle = inkDim;
   ctx.font = "500 14px -apple-system, sans-serif";
@@ -2069,6 +2888,896 @@ document.getElementById("downloadCardBtn").addEventListener("click", ()=>{
   link.download = "tally-summary.png";
   link.href = canvas.toDataURL("image/png");
   link.click();
+});
+
+/* ================= SHARED FAVORITES RENDER ================= */
+function renderFavoriteChipsInto(chipsElId, emptyElId){
+  const wrap = document.getElementById(chipsElId);
+  if(!wrap) return;
+  const favs = state.diningDollars.favorites || [];
+  if(!favs.length){
+    wrap.innerHTML = emptyElId ? "" : '<div class="empty-state">No favorites saved yet.</div>';
+    if(emptyElId) document.getElementById(emptyElId).style.display = "block";
+    return;
+  }
+  if(emptyElId) document.getElementById(emptyElId).style.display = "none";
+  wrap.innerHTML = favs.map(f=>`<button type="button" class="fav-chip" data-fav-log="${f.id}">${escapeHtml(f.name)}<span class="fav-price">${money(f.cost)}</span></button>`).join("");
+  wrap.querySelectorAll("[data-fav-log]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const fav = favs.find(f=>f.id===btn.dataset.favLog);
+      if(!fav) return;
+      state.diningDollars.transactions.push({id:uid(), name:fav.name, cost:fav.cost, date: todayISO()});
+      saveState();
+      toast("Logged "+fav.name);
+      renderFavoriteChipsInto("diningFavChipRow","diningFavEmpty");
+      renderFavoriteChipsInto("favoritesChipRow", null);
+      if(document.getElementById("screen-dining").classList.contains("active")) renderDining();
+    });
+  });
+}
+
+/* ================= CHECKLIST / REMINDERS ================= */
+let checkEditingId = null;
+let checkUrgency = "med";
+let checkSubtasksDraft = [];
+
+function renderCheckUrgencyChips(){
+  const opts = [["low","Low"],["med","Medium"],["high","High"]];
+  const container = document.getElementById("checkUrgencyChips");
+  container.innerHTML = "";
+  opts.forEach(([val,label])=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (checkUrgency===val ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", ()=>{ checkUrgency = val; renderCheckUrgencyChips(); });
+    container.appendChild(chip);
+  });
+}
+function renderSubtasksEditor(){
+  const wrap = document.getElementById("checkSubtasksEditor");
+  if(!checkSubtasksDraft.length){
+    wrap.innerHTML = '<div class="stat-sub">No subtasks yet.</div>';
+    return;
+  }
+  wrap.innerHTML = checkSubtasksDraft.map((s,idx)=>`
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="text" data-subtask-idx="${idx}" value="${escapeHtml(s.text)}" placeholder="Subtask&hellip;" style="flex:1; background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s); padding:8px 10px; font-size:13px; color:var(--ink);">
+      <button type="button" class="link-btn" data-remove-subtask="${idx}">Remove</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-subtask-idx]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{ checkSubtasksDraft[+inp.dataset.subtaskIdx].text = inp.value; });
+  });
+  wrap.querySelectorAll("[data-remove-subtask]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      checkSubtasksDraft.splice(+btn.dataset.removeSubtask,1);
+      renderSubtasksEditor();
+    });
+  });
+}
+document.getElementById("checkAddSubtaskBtn").addEventListener("click", ()=>{
+  checkSubtasksDraft.push({id:uid(), text:"", done:false});
+  renderSubtasksEditor();
+});
+
+function resetCheckForm(){
+  checkEditingId = null;
+  document.getElementById("checkTitle").value = "";
+  document.getElementById("checkDueDate").value = "";
+  document.getElementById("checkDueTime").value = "";
+  document.getElementById("checkRepeat").value = "none";
+  checkUrgency = "med";
+  checkSubtasksDraft = [];
+  renderCheckUrgencyChips();
+  renderSubtasksEditor();
+  document.getElementById("checkFormTitle").textContent = "New reminder";
+  document.getElementById("checkSubmitBtn").textContent = "Add reminder";
+  document.getElementById("checkSubmitBtn").style.gridColumn = "1/3";
+  document.getElementById("checkCancelEditBtn").style.display = "none";
+}
+function loadCheckIntoForm(item){
+  checkEditingId = item.id;
+  document.getElementById("checkTitle").value = item.title;
+  document.getElementById("checkDueDate").value = item.dueDate || "";
+  document.getElementById("checkDueTime").value = item.dueTime || "";
+  document.getElementById("checkRepeat").value = item.repeat || "none";
+  checkUrgency = item.urgency || "med";
+  checkSubtasksDraft = (item.subtasks||[]).map(s=>Object.assign({}, s));
+  renderCheckUrgencyChips();
+  renderSubtasksEditor();
+  document.getElementById("checkFormTitle").textContent = "Edit reminder";
+  document.getElementById("checkSubmitBtn").textContent = "Save changes";
+  document.getElementById("checkSubmitBtn").style.gridColumn = "2/3";
+  document.getElementById("checkCancelEditBtn").style.display = "flex";
+  const mainEl = document.querySelector("main");
+  if(mainEl) mainEl.scrollTop = 0;
+}
+document.getElementById("checkCancelEditBtn").addEventListener("click", ()=>{ resetCheckForm(); renderChecklist(); });
+
+document.getElementById("checkSubmitBtn").addEventListener("click", ()=>{
+  const title = document.getElementById("checkTitle").value.trim();
+  if(!title){ toast("Give it a title"); return; }
+  const dueDate = document.getElementById("checkDueDate").value || null;
+  const dueTime = document.getElementById("checkDueTime").value || null;
+  const repeat = document.getElementById("checkRepeat").value;
+  const subtasks = checkSubtasksDraft.filter(s=>s.text.trim()).map(s=>({id:s.id||uid(), text:s.text.trim(), done:!!s.done}));
+  if(checkEditingId){
+    const idx = state.checklist.findIndex(i=>i.id===checkEditingId);
+    if(idx>-1){
+      state.checklist[idx] = Object.assign({}, state.checklist[idx], {title, dueDate, dueTime, repeat, urgency:checkUrgency, subtasks, updatedAt:Date.now()});
+    }
+    toast("Reminder updated");
+  } else {
+    state.checklist.push({ id:uid(), title, dueDate, dueTime, repeat, urgency:checkUrgency, subtasks, done:false, createdAt:Date.now(), updatedAt:Date.now() });
+    toast("Reminder added");
+  }
+  saveState();
+  resetCheckForm();
+  renderChecklist();
+});
+
+function advanceDate(dateIso, repeat){
+  if(repeat==="daily") return addDaysISO(dateIso,1);
+  if(repeat==="weekly") return addDaysISO(dateIso,7);
+  if(repeat==="monthly"){
+    const d = parseDate(dateIso);
+    d.setMonth(d.getMonth()+1);
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+  return dateIso;
+}
+function toggleCheckDone(id){
+  const item = state.checklist.find(i=>i.id===id);
+  if(!item) return;
+  item.done = !item.done;
+  item.updatedAt = Date.now();
+  if(item.done && item.repeat && item.repeat!=="none" && item.dueDate){
+    const nextDue = advanceDate(item.dueDate, item.repeat);
+    state.checklist.push({
+      id:uid(), title:item.title, dueDate:nextDue, dueTime:item.dueTime, repeat:item.repeat,
+      urgency:item.urgency, subtasks:(item.subtasks||[]).map(s=>({id:uid(), text:s.text, done:false})),
+      done:false, createdAt:Date.now(), updatedAt:Date.now()
+    });
+    toast("Done \u2014 next one set for "+fmtDateShort(nextDue));
+  }
+  saveState();
+  renderChecklist();
+}
+function moveCheckItem(id, dir){
+  const idx = state.checklist.findIndex(i=>i.id===id);
+  if(idx<0) return;
+  const swap = idx+dir;
+  if(swap<0 || swap>=state.checklist.length) return;
+  const tmp = state.checklist[idx];
+  state.checklist[idx] = state.checklist[swap];
+  state.checklist[swap] = tmp;
+  saveState();
+  renderChecklist();
+}
+function deleteCheckItem(id){
+  state.checklist = state.checklist.filter(i=>i.id!==id);
+  saveState();
+  renderChecklist();
+}
+function toggleSubtask(itemId, subId){
+  const item = state.checklist.find(i=>i.id===itemId);
+  if(!item) return;
+  const sub = (item.subtasks||[]).find(s=>s.id===subId);
+  if(sub){ sub.done = !sub.done; saveState(); renderChecklist(); }
+}
+
+document.getElementById("checkSearch").addEventListener("input", renderChecklist);
+
+function renderChecklist(){
+  const q = document.getElementById("checkSearch").value.trim().toLowerCase();
+  let items = state.checklist.slice();
+  if(q){
+    items = items.filter(i=> i.title.toLowerCase().includes(q) || (i.subtasks||[]).some(s=>s.text.toLowerCase().includes(q)));
+  }
+  const wrap = document.getElementById("checklistList");
+  if(!items.length){
+    wrap.innerHTML = '<div class="empty-state">No reminders yet.</div>';
+    return;
+  }
+  wrap.innerHTML = items.map((item)=>{
+    const idx = state.checklist.indexOf(item);
+    const dueBits = [];
+    if(item.dueDate) dueBits.push(fmtDateShort(item.dueDate) + (item.dueTime ? " "+fmtTime12(item.dueTime) : ""));
+    if(item.repeat && item.repeat!=="none") dueBits.push("repeats "+item.repeat);
+    const subtaskHtml = (item.subtasks||[]).map(s=>`
+      <div class="subtask-row ${s.done?'done':''}" data-toggle-sub="${item.id}|${s.id}">
+        <span>${s.done?'\u2611':'\u2610'}</span><span>${escapeHtml(s.text)}</span>
+      </div>
+    `).join("");
+    return `<div class="check-item ${item.done?'done':''}" data-id="${item.id}">
+      <div class="check-item-top">
+        <div class="tx-check show ${item.done?'checked':''}" data-check-done="${item.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        <div style="flex:1;" data-edit-check="${item.id}">
+          <div class="check-title">${escapeHtml(item.title)}</div>
+          <div class="check-meta">
+            <span class="urgency-pill ${item.urgency}">${item.urgency.toUpperCase()}</span>
+            ${dueBits.map(b=>`<span>${b}</span>`).join(" &middot; ")}
+          </div>
+        </div>
+        <div class="reorder-btns">
+          <button data-move="${item.id}|-1">&#9650;</button>
+          <button data-move="${item.id}|1">&#9660;</button>
+        </div>
+      </div>
+      ${subtaskHtml}
+    </div>`;
+  }).join("");
+
+  wrap.querySelectorAll("[data-check-done]").forEach(el=>{
+    el.addEventListener("click", (e)=>{ e.stopPropagation(); toggleCheckDone(el.dataset.checkDone); });
+  });
+  wrap.querySelectorAll("[data-edit-check]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const item = state.checklist.find(i=>i.id===el.dataset.editCheck);
+      if(item) loadCheckIntoForm(item);
+    });
+  });
+  wrap.querySelectorAll("[data-move]").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const [id,dir] = btn.dataset.move.split("|");
+      moveCheckItem(id, parseInt(dir,10));
+    });
+  });
+  wrap.querySelectorAll("[data-toggle-sub]").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const [itemId,subId] = el.dataset.toggleSub.split("|");
+      toggleSubtask(itemId, subId);
+    });
+  });
+}
+
+/* ================= SLEEP TRACKER ================= */
+let sleepQuality = 0;
+function renderSleepStars(){
+  document.querySelectorAll("#sleepQualityStars .star-btn").forEach(btn=>{
+    btn.classList.toggle("filled", parseInt(btn.dataset.star,10) <= sleepQuality);
+  });
+}
+document.querySelectorAll("#sleepQualityStars .star-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{ sleepQuality = parseInt(btn.dataset.star,10); renderSleepStars(); });
+});
+
+function computeSleepDuration(bedtime, waketime){
+  const [bh,bm] = bedtime.split(":").map(Number);
+  const [wh,wm] = waketime.split(":").map(Number);
+  let diff = (wh*60+wm) - (bh*60+bm);
+  if(diff <= 0) diff += 24*60;
+  return diff/60;
+}
+
+document.getElementById("sleepSubmitBtn").addEventListener("click", ()=>{
+  const bedtime = document.getElementById("sleepBedtime").value;
+  const waketime = document.getElementById("sleepWaketime").value;
+  const wakeDate = document.getElementById("sleepWakeDate").value || todayISO();
+  if(!bedtime || !waketime){ toast("Enter bedtime and wake time"); return; }
+  const duration = computeSleepDuration(bedtime, waketime);
+  state.sleepLogs.push({ id:uid(), bedtime, waketime, wakeDate, quality: sleepQuality||null, durationHours: duration, createdAt: Date.now() });
+  saveState();
+  document.getElementById("sleepBedtime").value = "";
+  document.getElementById("sleepWaketime").value = "";
+  sleepQuality = 0;
+  renderSleepStars();
+  toast("Sleep logged");
+  renderSleep();
+});
+
+function computeSleepWeekStats(){
+  const today = todayISO();
+  const weekAgo = addDaysISO(today,-6);
+  const logs = state.sleepLogs.filter(l=>l.wakeDate>=weekAgo && l.wakeDate<=today);
+  if(!logs.length) return { avgDuration:null, avgQuality:null, logs:[] };
+  const avgDuration = logs.reduce((s,l)=>s+l.durationHours,0)/logs.length;
+  const qualified = logs.filter(l=>l.quality);
+  const avgQuality = qualified.length ? qualified.reduce((s,l)=>s+l.quality,0)/qualified.length : null;
+  return { avgDuration, avgQuality, logs };
+}
+
+let sleepChartInst = null;
+function renderSleep(){
+  document.getElementById("sleepWakeDate").value = document.getElementById("sleepWakeDate").value || todayISO();
+  const stats = computeSleepWeekStats();
+  document.getElementById("sleepAvgDuration").textContent = stats.avgDuration!=null ? stats.avgDuration.toFixed(1)+"h" : "\u2014";
+  document.getElementById("sleepAvgQuality").textContent = stats.avgQuality!=null ? stats.avgQuality.toFixed(1)+"/5" : "\u2014";
+
+  const today = todayISO();
+  const days = [];
+  for(let i=6;i>=0;i--) days.push(addDaysISO(today,-i));
+  const durations = days.map(d=>{
+    const log = state.sleepLogs.find(l=>l.wakeDate===d);
+    return log ? Math.round(log.durationHours*10)/10 : 0;
+  });
+  if(typeof Chart !== "undefined"){
+    const ctx = document.getElementById("sleepChart").getContext("2d");
+    if(sleepChartInst) sleepChartInst.destroy();
+    const inkColor = getComputedStyle(document.body).getPropertyValue('--ink-dim');
+    sleepChartInst = new Chart(ctx, {
+      type:"bar",
+      data:{ labels: days.map(fmtDateShort), datasets:[{ data: durations, backgroundColor: getComputedStyle(document.body).getPropertyValue('--accent'), borderRadius:4, maxBarThickness:22 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ x:{ ticks:{color:inkColor,font:{size:10}}, grid:{display:false} }, y:{ ticks:{color:inkColor,font:{size:10}}, grid:{color:getComputedStyle(document.body).getPropertyValue('--line')} } } }
+    });
+  }
+
+  const wrap = document.getElementById("sleepList");
+  const recent = state.sleepLogs.slice().sort((a,b)=>b.wakeDate.localeCompare(a.wakeDate)).slice(0,14);
+  if(!recent.length){
+    wrap.innerHTML = '<div class="empty-state">No sleep logged yet.</div>';
+  } else {
+    wrap.innerHTML = recent.map(l=>`
+      <div class="sleep-row">
+        <div>${fmtDateShort(l.wakeDate)} &middot; ${fmtTime12(l.bedtime)}&ndash;${fmtTime12(l.waketime)}</div>
+        <div>${l.durationHours.toFixed(1)}h ${l.quality?('&middot; '+'\u2605'.repeat(l.quality)):''}</div>
+      </div>
+    `).join("");
+  }
+}
+
+/* ================= NOTES ================= */
+let noteEditingId = null;
+let noteCategory = NOTE_CATEGORIES[0];
+function renderNoteCategoryChips(){
+  renderStringChips(document.getElementById("noteCategoryChips"), NOTE_CATEGORIES, noteCategory, (val)=>{
+    noteCategory = val;
+    renderNoteCategoryChips();
+  });
+}
+function resetNoteForm(){
+  noteEditingId = null;
+  document.getElementById("noteTitle").value = "";
+  document.getElementById("noteBody").value = "";
+  document.getElementById("noteTags").value = "";
+  noteCategory = NOTE_CATEGORIES[0];
+  renderNoteCategoryChips();
+  document.getElementById("noteFormTitle").textContent = "New note";
+  document.getElementById("noteSubmitBtn").textContent = "Save note";
+  document.getElementById("noteSubmitBtn").style.gridColumn = "1/3";
+  document.getElementById("noteCancelEditBtn").style.display = "none";
+}
+function loadNoteIntoForm(note){
+  noteEditingId = note.id;
+  document.getElementById("noteTitle").value = note.title;
+  document.getElementById("noteBody").value = note.body;
+  document.getElementById("noteTags").value = (note.tags||[]).join(", ");
+  noteCategory = note.category || NOTE_CATEGORIES[0];
+  renderNoteCategoryChips();
+  document.getElementById("noteFormTitle").textContent = "Edit note";
+  document.getElementById("noteSubmitBtn").textContent = "Save changes";
+  document.getElementById("noteSubmitBtn").style.gridColumn = "2/3";
+  document.getElementById("noteCancelEditBtn").style.display = "flex";
+  const mainEl = document.querySelector("main");
+  if(mainEl) mainEl.scrollTop = 0;
+}
+document.getElementById("noteCancelEditBtn").addEventListener("click", ()=>{ resetNoteForm(); renderNotes(); });
+document.getElementById("noteSubmitBtn").addEventListener("click", ()=>{
+  const title = document.getElementById("noteTitle").value.trim();
+  const body = document.getElementById("noteBody").value.trim();
+  if(!title){ toast("Give it a title"); return; }
+  const tags = document.getElementById("noteTags").value.split(",").map(t=>t.trim()).filter(Boolean);
+  if(noteEditingId){
+    const idx = state.notes.findIndex(n=>n.id===noteEditingId);
+    if(idx>-1) state.notes[idx] = Object.assign({}, state.notes[idx], {title, body, category:noteCategory, tags, updatedAt:Date.now()});
+    toast("Note updated");
+  } else {
+    state.notes.push({ id:uid(), title, body, category:noteCategory, tags, createdAt:Date.now(), updatedAt:Date.now() });
+    toast("Note saved");
+  }
+  saveState();
+  resetNoteForm();
+  renderNotes();
+});
+document.getElementById("noteSearch").addEventListener("input", renderNotes);
+document.getElementById("noteCategoryFilter").addEventListener("change", renderNotes);
+document.getElementById("noteSortSelect").addEventListener("change", renderNotes);
+
+function renderNotes(){
+  const filterSel = document.getElementById("noteCategoryFilter");
+  if(!filterSel.dataset.populated){
+    filterSel.innerHTML = '<option value="">All</option>' + NOTE_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join("");
+    filterSel.dataset.populated = "1";
+  }
+  const q = document.getElementById("noteSearch").value.trim().toLowerCase();
+  const catFilter = filterSel.value;
+  const sortBy = document.getElementById("noteSortSelect").value;
+  let notes = state.notes.slice();
+  if(catFilter) notes = notes.filter(n=>n.category===catFilter);
+  if(q) notes = notes.filter(n=> n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || (n.tags||[]).some(t=>t.toLowerCase().includes(q)));
+  notes.sort((a,b)=> sortBy==="created" ? b.createdAt-a.createdAt : b.updatedAt-a.updatedAt);
+
+  const wrap = document.getElementById("notesList");
+  if(!notes.length){
+    wrap.innerHTML = '<div class="empty-state">No notes yet.</div>';
+    return;
+  }
+  wrap.innerHTML = notes.map(n=>`
+    <div class="note-card" data-edit-note="${n.id}">
+      <div class="note-title">${escapeHtml(n.title)}</div>
+      ${n.body ? `<div class="note-body">${escapeHtml(n.body)}</div>` : ""}
+      <div class="note-tags">
+        <span class="note-tag">${escapeHtml(n.category)}</span>
+        ${(n.tags||[]).map(t=>`<span class="note-tag">#${escapeHtml(t)}</span>`).join("")}
+      </div>
+      <div class="note-date">Updated ${fmtDateShort(new Date(n.updatedAt).toISOString().slice(0,10))}</div>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-edit-note]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const note = state.notes.find(n=>n.id===el.dataset.editNote);
+      if(note) loadNoteIntoForm(note);
+    });
+  });
+}
+
+/* ================= CALENDAR + ICS EXPORT ================= */
+let calViewDate = new Date();
+let calSelectedDate = todayISO();
+const EVT_COLORS = { chore:"#B33B2C", check:"#B4632B", meal:"#3F6B4E" };
+
+function getEventsForDate(dateISO){
+  const events = [];
+  state.chores.forEach(c=>{ if(c.nextDueDate===dateISO) events.push({type:"chore", label:"Chore: "+c.name, color:EVT_COLORS.chore}); });
+  state.checklist.forEach(i=>{ if(!i.done && i.dueDate===dateISO) events.push({type:"check", label:i.title, color:EVT_COLORS.check}); });
+  const wk = WEEKDAY_KEYS[parseDate(dateISO).getDay()];
+  const sched = state.mealPlan.schedule[wk];
+  if(sched && (sched.b||sched.l||sched.d)){
+    const parts = [];
+    if(sched.b) parts.push("Breakfast");
+    if(sched.l) parts.push("Lunch");
+    if(sched.d) parts.push("Dinner");
+    events.push({type:"meal", label:parts.join(" + ")+" scheduled", color:EVT_COLORS.meal});
+  }
+  return events;
+}
+
+document.getElementById("calPrevBtn").addEventListener("click", ()=>{
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()-1, 1);
+  renderCalendar();
+});
+document.getElementById("calNextBtn").addEventListener("click", ()=>{
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()+1, 1);
+  renderCalendar();
+});
+
+function renderCalendar(){
+  document.getElementById("calMonthLabel").textContent = calViewDate.toLocaleDateString(undefined,{month:"long", year:"numeric"});
+  const dowRow = document.getElementById("calDowRow");
+  dowRow.innerHTML = WEEKDAY_KEYS.map(k=>`<div class="cal-dow">${WEEKDAY_LABELS[k]}</div>`).join("");
+
+  const year = calViewDate.getFullYear(), month = calViewDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = todayISO();
+
+  const cells = [];
+  for(let i=0;i<startOffset;i++){
+    const d = new Date(year, month, 1-(startOffset-i));
+    cells.push({date:d, otherMonth:true});
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    cells.push({date:new Date(year,month,d), otherMonth:false});
+  }
+  while(cells.length % 7 !== 0){
+    const last = cells[cells.length-1].date;
+    cells.push({date:new Date(last.getFullYear(),last.getMonth(),last.getDate()+1), otherMonth:true});
+  }
+
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = cells.map(cell=>{
+    const iso = cell.date.getFullYear()+"-"+pad(cell.date.getMonth()+1)+"-"+pad(cell.date.getDate());
+    const events = getEventsForDate(iso);
+    const dots = events.slice(0,3).map(e=>`<span class="evt-dot" style="background:${e.color}"></span>`).join("");
+    const cls = ["cal-day"];
+    if(cell.otherMonth) cls.push("other-month");
+    if(iso===today) cls.push("today");
+    if(iso===calSelectedDate) cls.push("selected");
+    return `<button type="button" class="${cls.join(' ')}" data-cal-day="${iso}">${cell.date.getDate()}<div class="dot-row">${dots}</div></button>`;
+  }).join("");
+  grid.querySelectorAll("[data-cal-day]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ calSelectedDate = btn.dataset.calDay; renderCalendar(); });
+  });
+
+  const agendaTitle = document.getElementById("calAgendaTitle");
+  agendaTitle.textContent = calSelectedDate===today ? "Today" : fmtDateShort(calSelectedDate);
+  const events = getEventsForDate(calSelectedDate);
+  const agendaWrap = document.getElementById("calAgenda");
+  if(!events.length){
+    agendaWrap.innerHTML = '<div class="empty-state">Nothing scheduled.</div>';
+  } else {
+    agendaWrap.innerHTML = events.map(e=>`
+      <div class="cal-agenda-item">
+        <span class="evt-dot-lg" style="background:${e.color}"></span>
+        <span style="flex:1;">${escapeHtml(e.label)}</span>
+        ${e.type!=="meal" ? `<a href="${gcalUrl(e.label, calSelectedDate)}" target="_blank" rel="noopener" class="link-btn">+GCal</a>` : ""}
+      </div>
+    `).join("");
+  }
+}
+
+function gcalUrl(title, dateISO){
+  const d = dateISO.replace(/-/g,"");
+  const endD = addDaysISO(dateISO,1).replace(/-/g,"");
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${d}/${endD}`;
+}
+
+function generateICS(){
+  const today = todayISO();
+  const events = [];
+  state.checklist.filter(i=>!i.done && i.dueDate && i.dueDate>=today).forEach(i=>{
+    events.push({title:i.title, date:i.dueDate, time:i.dueTime});
+  });
+  state.chores.filter(c=>c.nextDueDate && c.nextDueDate>=today).forEach(c=>{
+    events.push({title:"Chore: "+c.name, date:c.nextDueDate});
+  });
+  if(!events.length) return null;
+  let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Tally//EN\r\n";
+  events.forEach(e=>{
+    const dateDigits = e.date.replace(/-/g,"");
+    ics += "BEGIN:VEVENT\r\n";
+    ics += "UID:"+uid()+"@tally\r\n";
+    ics += "DTSTAMP:"+ new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z\r\n";
+    if(e.time){
+      ics += "DTSTART:"+dateDigits+"T"+e.time.replace(":","")+"00\r\n";
+    } else {
+      ics += "DTSTART;VALUE=DATE:"+dateDigits+"\r\n";
+    }
+    ics += "SUMMARY:"+String(e.title).replace(/\r?\n/g," ")+"\r\n";
+    ics += "END:VEVENT\r\n";
+  });
+  ics += "END:VCALENDAR\r\n";
+  return ics;
+}
+document.getElementById("calExportIcsBtn").addEventListener("click", ()=>{
+  const ics = generateICS();
+  if(!ics){ toast("No upcoming events"); return; }
+  const blob = new Blob([ics], {type:"text/calendar"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "tally-events.ics"; a.click();
+  URL.revokeObjectURL(url);
+  toast("Downloaded .ics");
+});
+
+/* ================= CHORES ================= */
+let choreAssignee = "me";
+function renderChoreAssigneeChips(){
+  const opts = [["me","Me"],["roommate","Roommate"],["split","Split (rotate)"]];
+  const container = document.getElementById("choreAssigneeChips");
+  container.innerHTML = "";
+  opts.forEach(([val,label])=>{
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (choreAssignee===val ? " active" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", ()=>{ choreAssignee = val; renderChoreAssigneeChips(); });
+    container.appendChild(chip);
+  });
+}
+document.getElementById("choreRecurrence").addEventListener("change", ()=>{
+  const val = document.getElementById("choreRecurrence").value;
+  document.getElementById("choreCustomDaysRow").style.display = val==="custom" ? "grid" : "none";
+});
+document.getElementById("choreSubmitBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("choreName").value.trim();
+  if(!name){ toast("Give it a name"); return; }
+  const recurrence = document.getElementById("choreRecurrence").value;
+  const customDays = recurrence==="custom" ? parseInt(document.getElementById("choreCustomDays").value,10) : null;
+  if(recurrence==="custom" && (!customDays || customDays<1)){ toast("Enter valid interval days"); return; }
+  const nextDueDate = document.getElementById("choreDueDate").value || todayISO();
+  state.chores.push({ id:uid(), name, assignee:choreAssignee, recurrence, customDays, nextDueDate, rotationLog:[], completed:false });
+  saveState();
+  document.getElementById("choreName").value = "";
+  document.getElementById("choreCustomDays").value = "";
+  document.getElementById("choreDueDate").value = "";
+  toast("Chore added");
+  renderChores();
+});
+function markChoreDone(id){
+  const chore = state.chores.find(c=>c.id===id);
+  if(!chore) return;
+  const doneDate = todayISO();
+  let by = chore.assignee;
+  if(chore.assignee==="split"){
+    const last = chore.rotationLog[chore.rotationLog.length-1];
+    by = (last && last.by==="me") ? "roommate" : "me";
+  }
+  chore.rotationLog.push({date:doneDate, by});
+  if(chore.recurrence==="daily") chore.nextDueDate = addDaysISO(doneDate,1);
+  else if(chore.recurrence==="weekly") chore.nextDueDate = addDaysISO(doneDate,7);
+  else if(chore.recurrence==="custom") chore.nextDueDate = addDaysISO(doneDate, chore.customDays||7);
+  else chore.completed = true;
+  saveState();
+  toast("Nice work \u2713");
+  renderChores();
+}
+function deleteChore(id){
+  state.chores = state.chores.filter(c=>c.id!==id);
+  saveState();
+  renderChores();
+}
+function renderChores(){
+  const active = state.chores.filter(c=>!c.completed).sort((a,b)=>(a.nextDueDate||"").localeCompare(b.nextDueDate||""));
+  const wrap = document.getElementById("choresList");
+  if(!active.length){
+    wrap.innerHTML = '<div class="empty-state">No chores yet.</div>';
+  } else {
+    wrap.innerHTML = active.map(c=>{
+      const recurLabel = c.recurrence==="none" ? "One-time" : c.recurrence==="custom" ? `Every ${c.customDays} days` : c.recurrence.charAt(0).toUpperCase()+c.recurrence.slice(1);
+      return `<div class="chore-card">
+        <div class="chore-top">
+          <div class="chore-name">${escapeHtml(c.name)}</div>
+          <span class="assignee-pill ${c.assignee}">${OWNER_LABELS[c.assignee]||c.assignee}</span>
+        </div>
+        <div class="stat-sub" style="margin:6px 0 10px;">${recurLabel} &middot; due ${fmtDateShort(c.nextDueDate)}</div>
+        <div class="two-col">
+          <button class="btn ghost sm" data-del-chore="${c.id}">Delete</button>
+          <button class="btn accent sm" data-done-chore="${c.id}">Mark done</button>
+        </div>
+      </div>`;
+    }).join("");
+    wrap.querySelectorAll("[data-done-chore]").forEach(btn=>btn.addEventListener("click", ()=>markChoreDone(btn.dataset.doneChore)));
+    wrap.querySelectorAll("[data-del-chore]").forEach(btn=>btn.addEventListener("click", ()=>deleteChore(btn.dataset.delChore)));
+  }
+
+  const logEntries = [];
+  state.chores.forEach(c=>{
+    (c.rotationLog||[]).forEach(r=>logEntries.push({name:c.name, date:r.date, by:r.by}));
+  });
+  logEntries.sort((a,b)=>b.date.localeCompare(a.date));
+  const logWrap = document.getElementById("choreRotationLog");
+  if(!logEntries.length){
+    logWrap.innerHTML = '<div class="empty-state">No completions logged yet.</div>';
+  } else {
+    logWrap.innerHTML = logEntries.slice(0,20).map(e=>`
+      <div class="budget-hist-row">
+        <div>${escapeHtml(e.name)}</div>
+        <div class="stat-sub">${fmtDateShort(e.date)} &middot; ${OWNER_LABELS[e.by]||e.by}</div>
+      </div>
+    `).join("");
+  }
+}
+
+/* ================= RECIPES ================= */
+let recipeEditingId = null;
+let recipeIngredientsDraft = [];
+function renderIngredientsEditor(){
+  const wrap = document.getElementById("recipeIngredientsEditor");
+  if(!recipeIngredientsDraft.length){
+    wrap.innerHTML = '<div class="stat-sub">No ingredients yet.</div>';
+    return;
+  }
+  wrap.innerHTML = recipeIngredientsDraft.map((ing,idx)=>`
+    <div class="ingredient-row">
+      <input type="text" data-ing-name="${idx}" value="${escapeHtml(ing.name)}" placeholder="Ingredient">
+      <input type="text" data-ing-qty="${idx}" value="${escapeHtml(ing.qty||'')}" placeholder="Qty" style="width:70px; flex:none;">
+      <button type="button" class="chip ${ing.haveIt?'active':''}" data-ing-have="${idx}">Have it</button>
+      <button type="button" class="link-btn" data-ing-remove="${idx}">&times;</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-ing-name]").forEach(inp=>inp.addEventListener("input", ()=>{ recipeIngredientsDraft[+inp.dataset.ingName].name = inp.value; }));
+  wrap.querySelectorAll("[data-ing-qty]").forEach(inp=>inp.addEventListener("input", ()=>{ recipeIngredientsDraft[+inp.dataset.ingQty].qty = inp.value; }));
+  wrap.querySelectorAll("[data-ing-have]").forEach(btn=>btn.addEventListener("click", ()=>{ const i=+btn.dataset.ingHave; recipeIngredientsDraft[i].haveIt = !recipeIngredientsDraft[i].haveIt; renderIngredientsEditor(); }));
+  wrap.querySelectorAll("[data-ing-remove]").forEach(btn=>btn.addEventListener("click", ()=>{ recipeIngredientsDraft.splice(+btn.dataset.ingRemove,1); renderIngredientsEditor(); }));
+}
+document.getElementById("recipeAddIngredientBtn").addEventListener("click", ()=>{
+  recipeIngredientsDraft.push({id:uid(), name:"", qty:"", haveIt:false});
+  renderIngredientsEditor();
+});
+function resetRecipeForm(){
+  recipeEditingId = null;
+  document.getElementById("recipeName").value = "";
+  document.getElementById("recipeCookTime").value = "";
+  document.getElementById("recipeInstructions").value = "";
+  recipeIngredientsDraft = [];
+  renderIngredientsEditor();
+  document.getElementById("recipeFormTitle").textContent = "New recipe";
+  document.getElementById("recipeSubmitBtn").textContent = "Save recipe";
+  document.getElementById("recipeSubmitBtn").style.gridColumn = "1/3";
+  document.getElementById("recipeCancelEditBtn").style.display = "none";
+}
+function loadRecipeIntoForm(r){
+  recipeEditingId = r.id;
+  document.getElementById("recipeName").value = r.name;
+  document.getElementById("recipeCookTime").value = r.cookTime||"";
+  document.getElementById("recipeInstructions").value = r.instructions||"";
+  recipeIngredientsDraft = (r.ingredients||[]).map(i=>Object.assign({}, i));
+  renderIngredientsEditor();
+  document.getElementById("recipeFormTitle").textContent = "Edit recipe";
+  document.getElementById("recipeSubmitBtn").textContent = "Save changes";
+  document.getElementById("recipeSubmitBtn").style.gridColumn = "2/3";
+  document.getElementById("recipeCancelEditBtn").style.display = "flex";
+  const mainEl = document.querySelector("main");
+  if(mainEl) mainEl.scrollTop = 0;
+}
+document.getElementById("recipeCancelEditBtn").addEventListener("click", ()=>{ resetRecipeForm(); renderRecipes(); });
+document.getElementById("recipeSubmitBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("recipeName").value.trim();
+  if(!name){ toast("Give it a name"); return; }
+  const cookTime = parseInt(document.getElementById("recipeCookTime").value,10) || null;
+  const instructions = document.getElementById("recipeInstructions").value.trim();
+  const ingredients = recipeIngredientsDraft.filter(i=>i.name.trim()).map(i=>({id:i.id||uid(), name:i.name.trim(), qty:i.qty||"", haveIt:!!i.haveIt}));
+  if(recipeEditingId){
+    const idx = state.recipes.findIndex(r=>r.id===recipeEditingId);
+    if(idx>-1) state.recipes[idx] = Object.assign({}, state.recipes[idx], {name, cookTime, instructions, ingredients});
+    toast("Recipe updated");
+  } else {
+    state.recipes.push({ id:uid(), name, cookTime, instructions, ingredients });
+    toast("Recipe saved");
+  }
+  saveState();
+  resetRecipeForm();
+  renderRecipes();
+});
+function addMissingIngredientsToGroceryList(recipeId){
+  const recipe = state.recipes.find(r=>r.id===recipeId);
+  if(!recipe) return;
+  const existingNames = new Set(state.shoppingItems.filter(i=>!i.checked).map(i=>i.name.toLowerCase()));
+  let added = 0;
+  (recipe.ingredients||[]).forEach(ing=>{
+    if(ing.haveIt) return;
+    if(existingNames.has(ing.name.toLowerCase())) return;
+    state.shoppingItems.push({ id:uid(), name:ing.name, price:null, unknownPrice:true, store:"", unknownStore:true, category:"Groceries", owner:"me", urgency:"none", byDate:null, checked:false, purchasedExpenseId:null });
+    existingNames.add(ing.name.toLowerCase());
+    added++;
+  });
+  saveState();
+  toast(added ? `Added ${added} item${added===1?'':'s'} to grocery list` : "Nothing missing!");
+}
+function deleteRecipe(id){
+  state.recipes = state.recipes.filter(r=>r.id!==id);
+  saveState();
+  renderRecipes();
+}
+function renderRecipes(){
+  const wrap = document.getElementById("recipesList");
+  if(!state.recipes.length){
+    wrap.innerHTML = '<div class="empty-state">No recipes yet.</div>';
+    return;
+  }
+  wrap.innerHTML = state.recipes.map(r=>{
+    const missing = (r.ingredients||[]).filter(i=>!i.haveIt).length;
+    return `<div class="recipe-card">
+      <div class="row">
+        <div class="chore-name" data-edit-recipe="${r.id}">${escapeHtml(r.name)}</div>
+        <div class="stat-sub">${r.cookTime?r.cookTime+" min":""}</div>
+      </div>
+      <div class="stat-sub" style="margin:6px 0 10px;">${(r.ingredients||[]).length} ingredients &middot; ${missing} missing</div>
+      <div class="two-col">
+        <button class="btn ghost sm" data-del-recipe="${r.id}">Delete</button>
+        <button class="btn accent sm" data-add-missing="${r.id}">Add missing to list</button>
+      </div>
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll("[data-edit-recipe]").forEach(el=>el.addEventListener("click", ()=>{ const r=state.recipes.find(x=>x.id===el.dataset.editRecipe); if(r) loadRecipeIntoForm(r); }));
+  wrap.querySelectorAll("[data-del-recipe]").forEach(btn=>btn.addEventListener("click", ()=>deleteRecipe(btn.dataset.delRecipe)));
+  wrap.querySelectorAll("[data-add-missing]").forEach(btn=>btn.addEventListener("click", ()=>addMissingIngredientsToGroceryList(btn.dataset.addMissing)));
+}
+
+/* ================= DINING VENUES / DIRECTORY ================= */
+document.getElementById("venueSubmitBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("venueName").value.trim();
+  if(!name){ toast("Give it a name"); return; }
+  const open = document.getElementById("venueOpen").value;
+  const close = document.getElementById("venueClose").value;
+  const tags = document.getElementById("venueTags").value.split(",").map(t=>t.trim()).filter(Boolean);
+  state.diningVenues.push({ id:uid(), name, open, close, tags });
+  saveState();
+  document.getElementById("venueName").value = "";
+  document.getElementById("venueOpen").value = "";
+  document.getElementById("venueClose").value = "";
+  document.getElementById("venueTags").value = "";
+  toast("Venue added");
+  renderVenues();
+});
+function deleteVenue(id){
+  state.diningVenues = state.diningVenues.filter(v=>v.id!==id);
+  saveState();
+  renderVenues();
+}
+document.getElementById("venueImportBtn").addEventListener("click", ()=>{
+  const raw = document.getElementById("venueImportText").value.trim();
+  if(!raw){ toast("Paste JSON first"); return; }
+  try{
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) throw new Error("not array");
+    const existingNames = new Set(state.diningVenues.map(v=>v.name.toLowerCase()));
+    let added = 0;
+    arr.forEach(v=>{
+      if(!v.name || existingNames.has(v.name.toLowerCase())) return;
+      state.diningVenues.push({ id:uid(), name:v.name, open:v.open||"", close:v.close||"", tags:Array.isArray(v.tags)?v.tags:[] });
+      existingNames.add(v.name.toLowerCase());
+      added++;
+    });
+    saveState();
+    document.getElementById("venueImportText").value = "";
+    toast(`Imported ${added} venue${added===1?'':'s'}`);
+    renderVenues();
+  }catch(e){
+    toast("Invalid JSON");
+  }
+});
+function renderVenues(){
+  renderFavoriteChipsInto("favoritesChipRow", null);
+  const wrap = document.getElementById("venuesList");
+  if(!state.diningVenues.length){
+    wrap.innerHTML = '<div class="empty-state">No venues added yet.</div>';
+    return;
+  }
+  wrap.innerHTML = state.diningVenues.map(v=>`
+    <div class="venue-card">
+      <div class="row">
+        <div class="chore-name">${escapeHtml(v.name)}</div>
+        <button class="link-btn" data-del-venue="${v.id}">Remove</button>
+      </div>
+      <div class="venue-hours">${v.open?fmtTime12(v.open):'?'} &ndash; ${v.close?fmtTime12(v.close):'?'}</div>
+      <div class="note-tags" style="margin-top:6px;">${(v.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join("")}</div>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-del-venue]").forEach(btn=>btn.addEventListener("click", ()=>deleteVenue(btn.dataset.delVenue)));
+}
+
+/* ================= NOTIFICATIONS ================= */
+function notifyOnce(key, title, body){
+  if(state.notifiedKeys.includes(key)) return;
+  if(window.Notification && Notification.permission==="granted"){
+    try{ new Notification(title, {body}); }catch(e){}
+  }
+  state.notifiedKeys.push(key);
+  if(state.notifiedKeys.length>200) state.notifiedKeys = state.notifiedKeys.slice(-200);
+  saveState();
+}
+function checkAndFireNotifications(){
+  const today = todayISO();
+  const now = new Date();
+  const nowMinutes = now.getHours()*60+now.getMinutes();
+  state.checklist.forEach(item=>{
+    if(item.done || !item.dueDate || item.dueDate>today) return;
+    let due = true;
+    if(item.dueDate===today && item.dueTime){
+      const [h,m] = item.dueTime.split(":").map(Number);
+      due = nowMinutes >= (h*60+m);
+    }
+    if(due) notifyOnce(`check:${item.id}:${today}`, "Reminder due: "+item.title, (item.subtasks||[]).length ? (item.subtasks.length+" subtasks") : "Tap to view in Tally");
+  });
+  state.chores.forEach(chore=>{
+    if(!chore.completed && chore.nextDueDate===today){
+      notifyOnce(`chore:${chore.id}:${today}`, "Chore due today: "+chore.name, "Assigned to "+(OWNER_LABELS[chore.assignee]||chore.assignee));
+    }
+  });
+  const dBal = diningRemainingAmt();
+  const startBal = state.diningDollars.startingBalance||0;
+  if(startBal>0 && dBal < startBal*0.1){
+    notifyOnce(`dining-low:${today}`, "Dining Dollars running low", money(dBal)+" remaining");
+  }
+  const activeBudget = getActiveBudget(today);
+  if(activeBudget){
+    const spentToday = sumExpenses(state.expenses.filter(e=>e.date===today));
+    const { dailyAllowance } = budgetMath(activeBudget, today);
+    if(dailyAllowance>=0 && spentToday > dailyAllowance){
+      notifyOnce(`budget-over:${today}`, "Over today's budget", "Spent "+money(spentToday)+" of "+money(dailyAllowance)+" allowance");
+    }
+  }
+}
+function updateNotifStatusText(){
+  const el = document.getElementById("notifStatus");
+  if(!el) return;
+  if(!("Notification" in window)){ el.textContent = "Not supported in this browser."; return; }
+  if(Notification.permission==="granted") el.textContent = "Notifications are enabled.";
+  else if(Notification.permission==="denied") el.textContent = "Notifications blocked \u2014 enable them in Settings.";
+  else el.textContent = "Not enabled yet.";
+}
+document.getElementById("enableNotifBtn").addEventListener("click", ()=>{
+  if(!("Notification" in window)){ toast("Notifications not supported"); return; }
+  Notification.requestPermission().then(()=>{
+    updateNotifStatusText();
+    if(Notification.permission==="granted") toast("Notifications enabled");
+  });
 });
 
 /* ================= JSON EXPORT / IMPORT ================= */
@@ -2141,6 +3850,16 @@ document.getElementById("importFileInput").addEventListener("change", (ev)=>{
 function setTodayLabel(){
   document.getElementById("todayLabel").textContent = new Date().toLocaleDateString(undefined,{weekday:"short", month:"short", day:"numeric"});
 }
+
+// If Chart.js (or its CDN fallback) finishes loading after the user is
+// already sitting on a screen that showed the "charts couldn't load"
+// message, re-render that screen once so the charts appear without
+// requiring the user to navigate away and back.
+window.__onChartReady = function(){
+  document.querySelectorAll("[data-chartwarn]").forEach(el=>el.remove());
+  if(document.getElementById("screen-data").classList.contains("active")) renderData();
+  if(document.getElementById("screen-sleep").classList.contains("active")) renderSleep();
+};
 
 function init(){
   setTodayLabel();
