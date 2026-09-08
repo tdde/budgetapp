@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -76,6 +76,9 @@
   .selectable-text, .selectable-text *{
     user-select:text;
     -webkit-user-select:text;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    max-width:100%;
   }
   input, textarea, select {
     font-family: inherit;
@@ -198,6 +201,8 @@
     border-radius:var(--radius-l);
     padding:16px;
     margin-bottom:14px;
+    max-width:100%;
+    overflow-x:hidden;
   }
   .card h2{
     margin:0 0 12px;
@@ -429,6 +434,7 @@
 
   textarea.export-text{
     width:100%;
+    max-width:100%;
     min-height:220px;
     background:var(--paper);
     border:1px solid var(--line-strong);
@@ -439,6 +445,10 @@
     line-height:1.6;
     color:var(--ink);
     resize:none;
+    box-sizing:border-box;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    white-space:pre-wrap;
   }
 
   .share-canvas-wrap{
@@ -627,6 +637,12 @@
   .mealprep-entry{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-s); margin-bottom:6px; }
   .mealprep-entry.completed{ opacity:.55; }
   .mealprep-entry .name{ font-weight:600; font-size:13.5px; }
+  .hms-row{ display:grid; grid-template-columns: 1fr auto 1fr auto 1fr auto; gap:6px; align-items:center; }
+  .hms-row input{
+    background:var(--paper); border:1px solid var(--line-strong); border-radius:var(--radius-s);
+    padding:11px 6px; font-size:16px; color:var(--ink); text-align:center; width:100%;
+  }
+  .hms-row .hms-unit{ font-size:11px; color:var(--ink-dim); font-weight:700; text-transform:uppercase; }
 
   /* ============ DINING VENUES / FAVORITES ============ */
   .venue-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 15px; margin-bottom:10px; }
@@ -808,6 +824,19 @@
       </div>
 
       <div class="card">
+        <div class="row" style="align-items:flex-start;">
+          <h2 style="margin:0;">School breaks</h2>
+        </div>
+        <div class="stat-sub" style="margin-bottom:10px;">Days off-campus or at home. These are skipped in the daily-allowance math above so they don't distort your budget.</div>
+        <div class="two-col">
+          <div class="field"><label>From</label><input type="date" id="breakStartInput"></div>
+          <div class="field"><label>To</label><input type="date" id="breakEndInput"></div>
+        </div>
+        <button class="btn ghost block" id="breakAddBtn" style="margin-top:10px;">Add break</button>
+        <div id="schoolBreaksList" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
         <h2>Favorite orders</h2>
         <div class="chip-row" id="diningFavChipRow"></div>
         <div class="stat-sub" id="diningFavEmpty" style="margin-top:4px;">Log a transaction below, then tap "Save as favorite" to quick-log it next time.</div>
@@ -959,6 +988,10 @@
             <div class="toggle-label">List individual purchases</div>
             <label class="switch"><input type="checkbox" id="cardOptPurchases" checked><span class="track"></span></label>
           </div>
+          <div class="toggle-row" id="cardOptByCategoryRow">
+            <div class="toggle-label">Show by category</div>
+            <label class="switch"><input type="checkbox" id="cardOptByCategory"><span class="track"></span></label>
+          </div>
           <div class="toggle-row">
             <div class="toggle-label">Category pie chart</div>
             <label class="switch"><input type="checkbox" id="cardOptPie" checked><span class="track"></span></label>
@@ -1083,8 +1116,20 @@
         </div>
         <canvas class="chart-canvas" id="sleepChart" style="margin-top:12px;"></canvas>
       </div>
+      <div class="card" id="sleepActiveCard">
+        <h2>Track tonight</h2>
+        <div id="sleepActiveIdle">
+          <div class="stat-sub" style="margin-bottom:10px;">Tap when you get in bed &mdash; Tally remembers even if you close the app, so you can log &quot;Woke Up&quot; the next morning.</div>
+          <button type="button" class="btn accent block" id="sleepInBedBtn">In Bed</button>
+        </div>
+        <div id="sleepActivePending" style="display:none;">
+          <div class="stat-sub" style="margin-bottom:10px;">In bed since <span id="sleepPendingSince"></span></div>
+          <button type="button" class="btn accent block" id="sleepWokeUpBtn">Woke Up</button>
+          <button type="button" class="btn ghost block" id="sleepCancelPendingBtn" style="margin-top:8px;">Cancel</button>
+        </div>
+      </div>
       <div class="card">
-        <h2>Log sleep</h2>
+        <h2 id="sleepFormTitle">Log sleep</h2>
         <div class="stack">
           <div class="two-col">
             <div class="field"><label>Bedtime</label><input type="time" id="sleepBedtime"></div>
@@ -1101,7 +1146,10 @@
               <button class="star-btn" data-star="5">&#9733;</button>
             </div>
           </div>
-          <button class="btn accent block" id="sleepSubmitBtn">Log sleep</button>
+          <div class="two-col">
+            <button class="btn ghost" id="sleepCancelEditBtn" style="display:none;">Cancel</button>
+            <button class="btn accent block" id="sleepSubmitBtn" style="grid-column:1/3;">Log sleep</button>
+          </div>
         </div>
       </div>
       <div class="card" style="padding-bottom:6px;">
@@ -1119,6 +1167,14 @@
           <div class="field"><label>Body</label><textarea class="export-text" style="min-height:100px;" id="noteBody" placeholder="Write it down&hellip;"></textarea></div>
           <div class="field"><label>Category</label><div class="chip-row" id="noteCategoryChips"></div></div>
           <div class="field"><label>Tags (comma separated)</label><input type="text" id="noteTags" placeholder="urgent, roommate, apartment&hellip;" autocomplete="off"></div>
+          <div class="toggle-row" style="border-top:none; padding-top:0;">
+            <div class="toggle-label">Schedule on calendar</div>
+            <label class="switch"><input type="checkbox" id="noteReminderToggle"><span class="track"></span></label>
+          </div>
+          <div class="two-col" id="noteReminderRow" style="display:none;">
+            <div class="field"><label>Date</label><input type="date" id="noteReminderDate"></div>
+            <div class="field"><label>Time (optional)</label><input type="time" id="noteReminderTime"></div>
+          </div>
           <div class="two-col">
             <button class="btn ghost" id="noteCancelEditBtn" style="display:none;">Cancel</button>
             <button class="btn accent block" id="noteSubmitBtn" style="grid-column:1/3;">Save note</button>
@@ -1265,7 +1321,10 @@
         <div id="venuesList"></div>
       </div>
       <div class="card">
-        <h2>Import menu data</h2>
+        <div class="row" style="align-items:flex-start;">
+          <h2 style="margin:0;">Import menu data</h2>
+          <button type="button" class="gear-btn" id="venueImportInfoBtn" aria-label="Import format help">&#8505;&#65039;</button>
+        </div>
         <div class="stat-sub" style="margin-bottom:8px;">Paste a JSON array of venues like <span class="selectable-text">[{"name":"...","open":"08:00","close":"20:00","tags":["vegan"]}]</span> to bulk-import.</div>
         <textarea class="export-text" id="venueImportText" placeholder="Paste JSON here&hellip;"></textarea>
         <button class="btn ghost block" id="venueImportBtn" style="margin-top:10px;">Import</button>
@@ -1343,7 +1402,22 @@
     <div class="modal-title" id="recipeFormTitle">New recipe</div>
     <div class="stack">
       <div class="field"><label>Name</label><input type="text" id="recipeName" placeholder="Chicken stir-fry&hellip;" autocomplete="off"></div>
-      <div class="field"><label>Cook time (minutes)</label><input type="number" inputmode="numeric" id="recipeCookTime" placeholder="25"></div>
+      <div class="field">
+        <label>Prep time</label>
+        <div class="hms-row">
+          <input type="number" inputmode="numeric" min="0" id="recipePrepHours" placeholder="0"><span class="hms-unit">h</span>
+          <input type="number" inputmode="numeric" min="0" id="recipePrepMinutes" placeholder="0"><span class="hms-unit">m</span>
+          <input type="number" inputmode="numeric" min="0" id="recipePrepSeconds" placeholder="0"><span class="hms-unit">s</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cook time</label>
+        <div class="hms-row">
+          <input type="number" inputmode="numeric" min="0" id="recipeCookHours" placeholder="0"><span class="hms-unit">h</span>
+          <input type="number" inputmode="numeric" min="0" id="recipeCookMinutes" placeholder="0"><span class="hms-unit">m</span>
+          <input type="number" inputmode="numeric" min="0" id="recipeCookSeconds" placeholder="0"><span class="hms-unit">s</span>
+        </div>
+      </div>
       <div class="field"><label>Tags (comma separated)</label><input type="text" id="recipeTags" placeholder="quick, vegetarian, meal-prep&hellip;" autocomplete="off"></div>
       <div class="field">
         <label>Ingredients</label>
@@ -1450,6 +1524,23 @@
         <button class="btn ghost" id="diningSettingsCancelBtn">Cancel</button>
         <button class="btn accent" id="diningSettingsSaveBtn">Save settings</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VENUE IMPORT FORMAT HELP ================= -->
+<div class="modal-backdrop" id="venueImportInfoModalBackdrop" style="z-index:70;">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Import format</div>
+    <div class="stack">
+      <div class="stat-sub">Paste a JSON array of venue objects. Each supports:</div>
+      <div class="stat-sub selectable-text" style="line-height:1.7;">
+        <b>placeName</b> (string, required) &middot; <b>hours</b> (string like "8:00 AM - 8:00 PM", or {"open":"08:00","close":"20:00"}) &middot; <b>menuItems</b> (array of {"name","cost","notes"}) &middot; <b>tags</b> (array, optional)
+      </div>
+      <textarea class="export-text selectable-text" id="venueImportTemplateText" readonly style="min-height:180px;"></textarea>
+      <button type="button" class="btn accent block" id="venueImportCopyTemplateBtn">Copy Format Template</button>
+      <button type="button" class="btn ghost block" id="venueImportInfoCloseBtn">Close</button>
     </div>
   </div>
 </div>
@@ -1565,16 +1656,43 @@ function syncAppHeight(){
 }
 function syncNavHeight(){
   const nav = document.querySelector('nav.tabbar');
-  if(nav && nav.offsetHeight) document.documentElement.style.setProperty('--nav-height', nav.offsetHeight + 'px');
+  // Use getBoundingClientRect (always current) instead of offsetHeight guarded
+  // by truthiness - the old guard skipped updates whenever the nav briefly
+  // measured 0 (e.g. mid-repaint), which let a stale --nav-height value
+  // persist and a gap creep in near the tab bar over a long session.
+  if(nav) document.documentElement.style.setProperty('--nav-height', nav.getBoundingClientRect().height + 'px');
 }
 syncAppHeight();
+syncNavHeight();
+// Keep --nav-height perfectly in sync with the tab bar's real size at all
+// times (safe-area changes, font-size/zoom changes, dynamic content) rather
+// than only recalculating on a handful of discrete events.
+if(window.ResizeObserver){
+  const navEl = document.querySelector('nav.tabbar');
+  if(navEl) new ResizeObserver(()=>syncNavHeight()).observe(navEl);
+}
 window.addEventListener('resize', ()=>{ syncAppHeight(); syncNavHeight(); });
-window.addEventListener('orientationchange', ()=>{ syncAppHeight(); setTimeout(()=>{ syncAppHeight(); syncNavHeight(); },300); });
+window.addEventListener('orientationchange', ()=>{ syncAppHeight(); syncNavHeight(); setTimeout(()=>{ syncAppHeight(); syncNavHeight(); },300); });
 if(window.visualViewport){
-  window.visualViewport.addEventListener('resize', syncAppHeight);
+  window.visualViewport.addEventListener('resize', ()=>{ syncAppHeight(); syncNavHeight(); });
   window.visualViewport.addEventListener('scroll', syncAppHeight);
 }
 window.addEventListener('load', ()=>{ syncAppHeight(); syncNavHeight(); });
+// Re-sync whenever the app regains visibility (backgrounded tab/app switch)
+// so any drift accumulated while hidden is corrected immediately.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ syncAppHeight(); syncNavHeight(); } });
+window.addEventListener('pageshow', ()=>{ syncAppHeight(); syncNavHeight(); });
+
+/* ================= FOCUS SCROLL-JUMP FIX =================
+   #app/body are pinned to the viewport (position:fixed) and each screen
+   scrolls internally via <main>. Some mobile browsers still try to scroll
+   the outer *layout* viewport to reveal a focused field, which - because
+   everything above it is fixed - just yanks the whole app down and hides
+   the field instead of helping. The layout viewport should never need to
+   scroll here, so snap it back rather than letting that happen. */
+window.addEventListener('scroll', ()=>{
+  if(window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0,0);
+}, {passive:true});
 
 /* ================= STATE / STORAGE (schema tally.v2) ================= */
 const LS_KEY_V1 = "tally.v1";
@@ -1608,19 +1726,20 @@ function freshState(){
     expenses:[],
     categories: DEFAULT_CATEGORIES.slice(),
     budgets:[],
-    diningDollars: { startingBalance:0, transactions:[], semesterEnd:null, favorites:[] },
+    diningDollars: { startingBalance:0, transactions:[], semesterEnd:null, favorites:[], schoolBreaks:[] },
     mealPlan: { schedule: defaultSchedule(), log:{}, extraBanked:0 },
     shoppingItems:[],
     itemCatalog:[],
     checklist:[],
     sleepLogs:[],
+    sleepPending: null,
     notes:[],
     chores:[],
     recipes:[],
     diningVenues:[],
     mealPrep: { entries:[] },
     calendarEvents:[],
-    cardOptions: { purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false },
+    cardOptions: { purchases:true, byCategory:false, pie:true, budget:false, dining:false, meals:false, sleep:false },
     notifiedKeys:[]
   };
 }
@@ -1631,7 +1750,8 @@ function normalizeState(parsed){
   out.expenses = parsed.expenses || [];
   out.categories = parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES.slice();
   out.budgets = parsed.budgets || [];
-  out.diningDollars = Object.assign({ startingBalance:0, transactions:[], semesterEnd:null, favorites:[] }, parsed.diningDollars || {});
+  out.diningDollars = Object.assign({ startingBalance:0, transactions:[], semesterEnd:null, favorites:[], schoolBreaks:[] }, parsed.diningDollars || {});
+  out.diningDollars.schoolBreaks = out.diningDollars.schoolBreaks || [];
   out.mealPlan = Object.assign({ schedule: defaultSchedule(), log:{}, extraBanked:0 }, parsed.mealPlan || {});
   out.mealPlan.schedule = out.mealPlan.schedule || defaultSchedule();
   out.mealPlan.log = out.mealPlan.log || {};
@@ -1640,17 +1760,28 @@ function normalizeState(parsed){
   out.itemCatalog = parsed.itemCatalog || [];
   out.checklist = (parsed.checklist || []).map(i=>Object.assign({tags:[]}, i, {tags: i.tags||[]}));
   out.sleepLogs = parsed.sleepLogs || [];
+  out.sleepPending = parsed.sleepPending || null;
   out.notes = parsed.notes || [];
   out.chores = parsed.chores || [];
-  out.recipes = (parsed.recipes || []).map(r=>Object.assign({tags:[]}, r, {
-    tags: r.tags || [],
-    ingredients: (r.ingredients||[]).map(i=>Object.assign({unit:"", cost:null, store:""}, i))
-  }));
+  out.recipes = (parsed.recipes || []).map(r=>{
+    const rec = Object.assign({tags:[]}, r, {
+      tags: r.tags || [],
+      ingredients: (r.ingredients||[]).map(i=>Object.assign({unit:"", cost:null, store:""}, i))
+    });
+    // Migrate legacy single "cookTime" (whole minutes) field to the new
+    // prepTimeSec/cookTimeSec (seconds) fields used by the H/M/S inputs.
+    if(rec.cookTimeSec===undefined){
+      rec.cookTimeSec = (r.cookTime!=null && !isNaN(r.cookTime)) ? Math.round(r.cookTime*60) : null;
+    }
+    if(rec.prepTimeSec===undefined) rec.prepTimeSec = null;
+    delete rec.cookTime;
+    return rec;
+  });
   out.diningVenues = (parsed.diningVenues || []).map(v=>Object.assign({meals:[]}, v, {meals: v.meals||[]}));
   out.mealPrep = Object.assign({ entries:[] }, parsed.mealPrep || {});
   out.mealPrep.entries = out.mealPrep.entries || [];
   out.calendarEvents = parsed.calendarEvents || [];
-  out.cardOptions = Object.assign({ purchases:true, pie:true, budget:false, dining:false, meals:false, sleep:false }, parsed.cardOptions || {});
+  out.cardOptions = Object.assign({ purchases:true, byCategory:false, pie:true, budget:false, dining:false, meals:false, sleep:false }, parsed.cardOptions || {});
   out.notifiedKeys = parsed.notifiedKeys || [];
   out.schemaVersion = 2;
   return out;
@@ -1862,7 +1993,7 @@ qaPrice.addEventListener("input", ()=>{
   const v = parseFloat(qaPrice.value);
   amountPreview.textContent = isNaN(v) ? "0.00" : v.toFixed(2);
 });
-document.querySelector(".amount-display").addEventListener("click", ()=> qaPrice.focus());
+document.querySelector(".amount-display").addEventListener("click", ()=> qaPrice.focus({preventScroll:true}));
 
 document.getElementById("qaSubmit").addEventListener("click", ()=>{
   const name = document.getElementById("qaName").value.trim();
@@ -2260,6 +2391,9 @@ document.getElementById("diningSettingsSaveBtn").addEventListener("click", ()=>{
   renderDining();
 });
 
+function isSchoolBreakDate(iso){
+  return (state.diningDollars.schoolBreaks||[]).some(b=> iso>=b.start && iso<=b.end);
+}
 function computeDiningVelocity(){
   const sem = state.diningDollars.semesterEnd;
   const today = todayISO();
@@ -2267,18 +2401,30 @@ function computeDiningVelocity(){
     return null;
   }
   const remaining = diningRemainingAmt();
-  const daysRemaining = daysBetweenInclusive(today, sem);
+  let daysRemaining = 0;
   let scheduledDaysRemaining = 0;
+  let offDaysRemaining = 0;
+  let breakDaysRemaining = 0;
   let cursor = today, guard = 0;
   while(cursor <= sem && guard < 400){
+    // School Break days are excluded entirely from the day-counting used for
+    // spending averages / daily allowance math, since no dining spend is
+    // expected on those off-campus/home days and including them would
+    // artificially stretch the remaining balance too thin.
+    if(isSchoolBreakDate(cursor)){
+      breakDaysRemaining++;
+      cursor = addDaysISO(cursor,1);
+      guard++;
+      continue;
+    }
+    daysRemaining++;
     const wk = WEEKDAY_KEYS[parseDate(cursor).getUTCDay()];
     const sched = state.mealPlan.schedule[wk];
     const hasMeals = sched.b || sched.l || sched.d;
-    if(hasMeals) scheduledDaysRemaining++;
+    if(hasMeals) scheduledDaysRemaining++; else offDaysRemaining++;
     cursor = addDaysISO(cursor,1);
     guard++;
   }
-  const offDaysRemaining = Math.max(0, daysRemaining - scheduledDaysRemaining);
   // Banked meal swipes can cover some scheduled days without needing dining dollars
   const bankedCoverageDays = Math.min(state.mealPlan.extraBanked, scheduledDaysRemaining);
   const effectiveScheduledDays = Math.max(0, scheduledDaysRemaining - bankedCoverageDays);
@@ -2289,7 +2435,7 @@ function computeDiningVelocity(){
   const scheduledDayAllowance = perUnit*weightScheduled;
   const offDayAllowance = perUnit*weightOff;
 
-  return { daysRemaining, scheduledDaysRemaining, offDaysRemaining, bankedCoverageDays, scheduledDayAllowance, offDayAllowance, remaining };
+  return { daysRemaining, scheduledDaysRemaining, offDaysRemaining, breakDaysRemaining, bankedCoverageDays, scheduledDayAllowance, offDayAllowance, remaining };
 }
 
 function renderDiningVelocity(){
@@ -2305,7 +2451,44 @@ function renderDiningVelocity(){
   }
   schEl.textContent = money(v.scheduledDayAllowance);
   offEl.textContent = money(v.offDayAllowance);
-  detailEl.textContent = `${v.daysRemaining} days left \u00b7 ${v.scheduledDaysRemaining} scheduled, ${v.offDaysRemaining} off-days \u00b7 ${v.bankedCoverageDays} covered by banked meals`;
+  detailEl.textContent = `${v.daysRemaining} days left \u00b7 ${v.scheduledDaysRemaining} scheduled, ${v.offDaysRemaining} off-days \u00b7 ${v.bankedCoverageDays} covered by banked meals` + (v.breakDaysRemaining ? ` \u00b7 ${v.breakDaysRemaining} school-break day${v.breakDaysRemaining===1?'':'s'} excluded` : "");
+}
+
+document.getElementById("breakAddBtn").addEventListener("click", ()=>{
+  const start = document.getElementById("breakStartInput").value;
+  const endRaw = document.getElementById("breakEndInput").value;
+  if(!start){ toast("Pick a start date"); return; }
+  const end = endRaw || start; // no end date = a single toggled day
+  if(end < start){ toast("End date is before start date"); return; }
+  state.diningDollars.schoolBreaks = state.diningDollars.schoolBreaks || [];
+  state.diningDollars.schoolBreaks.push({ id:uid(), start, end });
+  saveState();
+  document.getElementById("breakStartInput").value = "";
+  document.getElementById("breakEndInput").value = "";
+  toast("School break added");
+  renderDining();
+});
+function deleteSchoolBreak(id){
+  state.diningDollars.schoolBreaks = (state.diningDollars.schoolBreaks||[]).filter(b=>b.id!==id);
+  saveState();
+  renderDining();
+}
+function renderSchoolBreaksList(){
+  const wrap = document.getElementById("schoolBreaksList");
+  const breaks = (state.diningDollars.schoolBreaks||[]).slice().sort((a,b)=>a.start.localeCompare(b.start));
+  if(!breaks.length){
+    wrap.innerHTML = '<div class="empty-state">No school breaks set.</div>';
+    return;
+  }
+  wrap.innerHTML = breaks.map(b=>`
+    <div class="row" style="padding:8px 0; border-top:1px dashed var(--line);">
+      <div>${fmtDateShort(b.start)}${b.end!==b.start ? (" &ndash; "+fmtDateShort(b.end)) : ""}</div>
+      <button type="button" class="link-btn" data-del-break="${b.id}">Remove</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-del-break]").forEach(btn=>{
+    btn.addEventListener("click", ()=>deleteSchoolBreak(btn.dataset.delBreak));
+  });
 }
 
 document.getElementById("diningSaveFavBtn").addEventListener("click", ()=>{
@@ -2541,6 +2724,7 @@ function renderDining(){
   document.getElementById("diningSettingsSummary").textContent = summaryBits.join(" \u00b7 ") + " \u2014 tap \u2699\ufe0f to edit";
   if(!document.getElementById("diningTxDate").value) document.getElementById("diningTxDate").value = todayISO();
   renderDiningVelocity();
+  renderSchoolBreaksList();
   renderDiningFavorites();
   renderDiningTxList();
   renderMealPlan();
@@ -3005,7 +3189,7 @@ document.getElementById("shareCustomFrom").addEventListener("change", renderData
 document.getElementById("shareCustomTo").addEventListener("change", renderData);
 
 const CARD_OPT_IDS = {
-  purchases:"cardOptPurchases", pie:"cardOptPie", budget:"cardOptBudget",
+  purchases:"cardOptPurchases", byCategory:"cardOptByCategory", pie:"cardOptPie", budget:"cardOptBudget",
   dining:"cardOptDining", meals:"cardOptMeals", sleep:"cardOptSleep"
 };
 function bindCardOptionToggles(){
@@ -3046,9 +3230,18 @@ function buildTextSummary(from, to, list, opts){
   });
   if(opts.purchases && list.length){
     out += "\nPURCHASES\n";
-    list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).forEach(e=>{
-      out += (fmtDateShort(e.date)+" "+e.name).padEnd(28," ").slice(0,28) + money(e.price).padStart(10," ") + "\n";
-    });
+    if(opts.byCategory){
+      catNames.forEach(name=>{
+        out += "-- " + name.toUpperCase() + " --\n";
+        list.filter(e=>e.category===name).slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).forEach(e=>{
+          out += (fmtDateShort(e.date)+" "+e.name).padEnd(28," ").slice(0,28) + money(e.price).padStart(10," ") + "\n";
+        });
+      });
+    } else {
+      list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).forEach(e=>{
+        out += (fmtDateShort(e.date)+" "+e.name).padEnd(28," ").slice(0,28) + money(e.price).padStart(10," ") + "\n";
+      });
+    }
   }
   if(opts.budget){
     const active = getActiveBudget(todayISO());
@@ -3122,7 +3315,7 @@ function drawShareCanvas(from, to, list, opts){
   y = 236; // header + total block fixed height
   if(opts.pie && catNames.length) y += 260;
   y += 20 + catNames.length*60; // category bars
-  if(opts.purchases && list.length) y += 40 + Math.min(list.length,10)*30;
+  if(opts.purchases && list.length) y += 40 + Math.min(list.length,10)*30 + (opts.byCategory ? catNames.length*26 : 0);
   if(opts.budget) y += 90;
   if(opts.dining) y += 70;
   if(opts.meals) y += 70;
@@ -3226,9 +3419,21 @@ function drawShareCanvas(from, to, list, opts){
 
   if(opts.purchases && list.length){
     drawSectionHeader("Purchases");
-    list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,10).forEach(e=>{
-      drawKV(fmtDateShort(e.date)+" "+e.name, money(e.price));
-    });
+    if(opts.byCategory){
+      catNames.forEach(name=>{
+        ctx.fillStyle = categoryColor(name);
+        ctx.font = "700 13px -apple-system, sans-serif";
+        ctx.fillText(name.toUpperCase(), 40, cursorY);
+        cursorY += 22;
+        list.filter(e=>e.category===name).slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).forEach(e=>{
+          drawKV(fmtDateShort(e.date)+" "+e.name, money(e.price));
+        });
+      });
+    } else {
+      list.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,10).forEach(e=>{
+        drawKV(fmtDateShort(e.date)+" "+e.name, money(e.price));
+      });
+    }
   }
   if(opts.budget){
     const active = getActiveBudget(todayISO());
@@ -3559,6 +3764,7 @@ function renderChecklist(){
 
 /* ================= SLEEP TRACKER ================= */
 let sleepQuality = 0;
+let sleepEditingId = null;
 function renderSleepStars(){
   document.querySelectorAll("#sleepQualityStars .star-btn").forEach(btn=>{
     btn.classList.toggle("filled", parseInt(btn.dataset.star,10) <= sleepQuality);
@@ -3576,20 +3782,102 @@ function computeSleepDuration(bedtime, waketime){
   return diff/60;
 }
 
+function resetSleepForm(){
+  sleepEditingId = null;
+  document.getElementById("sleepBedtime").value = "";
+  document.getElementById("sleepWaketime").value = "";
+  document.getElementById("sleepWakeDate").value = todayISO();
+  sleepQuality = 0;
+  renderSleepStars();
+  document.getElementById("sleepFormTitle").textContent = "Log sleep";
+  document.getElementById("sleepSubmitBtn").textContent = "Log sleep";
+  document.getElementById("sleepSubmitBtn").style.gridColumn = "1/3";
+  document.getElementById("sleepCancelEditBtn").style.display = "none";
+}
+function loadSleepIntoForm(log){
+  sleepEditingId = log.id;
+  document.getElementById("sleepBedtime").value = log.bedtime;
+  document.getElementById("sleepWaketime").value = log.waketime;
+  document.getElementById("sleepWakeDate").value = log.wakeDate;
+  sleepQuality = log.quality || 0;
+  renderSleepStars();
+  document.getElementById("sleepFormTitle").textContent = "Edit sleep entry";
+  document.getElementById("sleepSubmitBtn").textContent = "Save changes";
+  document.getElementById("sleepSubmitBtn").style.gridColumn = "2/3";
+  document.getElementById("sleepCancelEditBtn").style.display = "flex";
+  const mainEl = document.querySelector("main");
+  if(mainEl) mainEl.scrollTop = 0;
+}
+function deleteSleepLog(id){
+  state.sleepLogs = state.sleepLogs.filter(l=>l.id!==id);
+  saveState();
+  if(sleepEditingId===id) resetSleepForm();
+  toast("Sleep entry deleted");
+  renderSleep();
+}
+document.getElementById("sleepCancelEditBtn").addEventListener("click", ()=>{ resetSleepForm(); renderSleep(); });
+
 document.getElementById("sleepSubmitBtn").addEventListener("click", ()=>{
   const bedtime = document.getElementById("sleepBedtime").value;
   const waketime = document.getElementById("sleepWaketime").value;
   const wakeDate = document.getElementById("sleepWakeDate").value || todayISO();
   if(!bedtime || !waketime){ toast("Enter bedtime and wake time"); return; }
   const duration = computeSleepDuration(bedtime, waketime);
-  state.sleepLogs.push({ id:uid(), bedtime, waketime, wakeDate, quality: sleepQuality||null, durationHours: duration, createdAt: Date.now() });
+  if(sleepEditingId){
+    const idx = state.sleepLogs.findIndex(l=>l.id===sleepEditingId);
+    if(idx>-1) state.sleepLogs[idx] = Object.assign({}, state.sleepLogs[idx], { bedtime, waketime, wakeDate, quality: sleepQuality||null, durationHours: duration });
+    toast("Sleep entry updated");
+  } else {
+    state.sleepLogs.push({ id:uid(), bedtime, waketime, wakeDate, quality: sleepQuality||null, durationHours: duration, createdAt: Date.now() });
+    toast("Sleep logged");
+  }
   saveState();
-  document.getElementById("sleepBedtime").value = "";
-  document.getElementById("sleepWaketime").value = "";
-  sleepQuality = 0;
-  renderSleepStars();
-  toast("Sleep logged");
+  resetSleepForm();
   renderSleep();
+});
+
+/* ---- Two-step active bedtime tracker: "In Bed" now, "Woke Up" later ----
+   Persisted on state (and therefore localStorage) so the pending bedtime
+   survives closing the app and returning the next morning. */
+function renderSleepActiveCard(){
+  const pending = state.sleepPending;
+  const idleEl = document.getElementById("sleepActiveIdle");
+  const pendingEl = document.getElementById("sleepActivePending");
+  if(pending && pending.startedAt){
+    idleEl.style.display = "none";
+    pendingEl.style.display = "block";
+    const d = new Date(pending.startedAt);
+    document.getElementById("sleepPendingSince").textContent =
+      fmtDateShort(isoFromTimestamp(pending.startedAt)) + " \u00b7 " + fmtTime12(pad(d.getHours())+":"+pad(d.getMinutes()));
+  } else {
+    idleEl.style.display = "block";
+    pendingEl.style.display = "none";
+  }
+}
+document.getElementById("sleepInBedBtn").addEventListener("click", ()=>{
+  state.sleepPending = { startedAt: Date.now() };
+  saveState();
+  toast("Bedtime saved \u2014 sleep well");
+  renderSleepActiveCard();
+});
+document.getElementById("sleepCancelPendingBtn").addEventListener("click", ()=>{
+  state.sleepPending = null;
+  saveState();
+  renderSleepActiveCard();
+});
+document.getElementById("sleepWokeUpBtn").addEventListener("click", ()=>{
+  const pending = state.sleepPending;
+  if(!pending || !pending.startedAt) return;
+  const started = new Date(pending.startedAt);
+  const now = new Date();
+  resetSleepForm();
+  document.getElementById("sleepBedtime").value = pad(started.getHours())+":"+pad(started.getMinutes());
+  document.getElementById("sleepWaketime").value = pad(now.getHours())+":"+pad(now.getMinutes());
+  document.getElementById("sleepWakeDate").value = todayISO();
+  state.sleepPending = null;
+  saveState();
+  renderSleepActiveCard();
+  toast("Add a quality rating (optional), then tap Log sleep");
 });
 
 function computeSleepWeekStats(){
@@ -3606,6 +3894,7 @@ function computeSleepWeekStats(){
 let sleepChartInst = null;
 function renderSleep(){
   document.getElementById("sleepWakeDate").value = document.getElementById("sleepWakeDate").value || todayISO();
+  renderSleepActiveCard();
   const stats = computeSleepWeekStats();
   document.getElementById("sleepAvgDuration").textContent = stats.avgDuration!=null ? stats.avgDuration.toFixed(1)+"h" : "\u2014";
   document.getElementById("sleepAvgQuality").textContent = stats.avgQuality!=null ? stats.avgQuality.toFixed(1)+"/5" : "\u2014";
@@ -3635,16 +3924,38 @@ function renderSleep(){
   } else {
     wrap.innerHTML = recent.map(l=>`
       <div class="sleep-row">
-        <div>${fmtDateShort(l.wakeDate)} &middot; ${fmtTime12(l.bedtime)}&ndash;${fmtTime12(l.waketime)}</div>
-        <div>${l.durationHours.toFixed(1)}h ${l.quality?('&middot; '+'\u2605'.repeat(l.quality)):''}</div>
+        <div>
+          <div>${fmtDateShort(l.wakeDate)} &middot; ${fmtTime12(l.bedtime)}&ndash;${fmtTime12(l.waketime)}</div>
+          <div>${l.durationHours.toFixed(1)}h ${l.quality?('&middot; '+'\u2605'.repeat(l.quality)):''}</div>
+        </div>
+        <div class="row" style="gap:10px; flex-shrink:0;">
+          <button type="button" class="link-btn" data-edit-sleep="${l.id}">Edit</button>
+          <button type="button" class="link-btn" data-del-sleep="${l.id}">Delete</button>
+        </div>
       </div>
     `).join("");
+    wrap.querySelectorAll("[data-edit-sleep]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const log = state.sleepLogs.find(l=>l.id===btn.dataset.editSleep);
+        if(log) loadSleepIntoForm(log);
+      });
+    });
+    wrap.querySelectorAll("[data-del-sleep]").forEach(btn=>{
+      btn.addEventListener("click", ()=> deleteSleepLog(btn.dataset.delSleep));
+    });
   }
 }
 
 /* ================= NOTES ================= */
 let noteEditingId = null;
 let noteCategory = NOTE_CATEGORIES[0];
+let noteReminderEventId = null;
+document.getElementById("noteReminderToggle").addEventListener("change", (e)=>{
+  document.getElementById("noteReminderRow").style.display = e.target.checked ? "grid" : "none";
+});
+function findNoteCalendarEvent(noteId){
+  return state.calendarEvents.find(ev=>ev.sourceType==="note" && ev.sourceId===noteId) || null;
+}
 function renderNoteCategoryChips(){
   renderStringChips(document.getElementById("noteCategoryChips"), NOTE_CATEGORIES, noteCategory, (val)=>{
     noteCategory = val;
@@ -3653,6 +3964,7 @@ function renderNoteCategoryChips(){
 }
 function resetNoteForm(){
   noteEditingId = null;
+  noteReminderEventId = null;
   document.getElementById("noteTitle").value = "";
   document.getElementById("noteBody").value = "";
   document.getElementById("noteTags").value = "";
@@ -3662,6 +3974,10 @@ function resetNoteForm(){
   document.getElementById("noteSubmitBtn").textContent = "Save note";
   document.getElementById("noteSubmitBtn").style.gridColumn = "1/3";
   document.getElementById("noteCancelEditBtn").style.display = "none";
+  document.getElementById("noteReminderToggle").checked = false;
+  document.getElementById("noteReminderRow").style.display = "none";
+  document.getElementById("noteReminderDate").value = "";
+  document.getElementById("noteReminderTime").value = "";
 }
 function loadNoteIntoForm(note){
   noteEditingId = note.id;
@@ -3674,6 +3990,12 @@ function loadNoteIntoForm(note){
   document.getElementById("noteSubmitBtn").textContent = "Save changes";
   document.getElementById("noteSubmitBtn").style.gridColumn = "2/3";
   document.getElementById("noteCancelEditBtn").style.display = "flex";
+  const existingEvent = findNoteCalendarEvent(note.id);
+  noteReminderEventId = existingEvent ? existingEvent.id : null;
+  document.getElementById("noteReminderToggle").checked = !!existingEvent;
+  document.getElementById("noteReminderRow").style.display = existingEvent ? "grid" : "none";
+  document.getElementById("noteReminderDate").value = existingEvent ? existingEvent.date : "";
+  document.getElementById("noteReminderTime").value = existingEvent ? (existingEvent.startTime||"") : "";
   const mainEl = document.querySelector("main");
   if(mainEl) mainEl.scrollTop = 0;
 }
@@ -3683,17 +4005,42 @@ document.getElementById("noteSubmitBtn").addEventListener("click", ()=>{
   const body = document.getElementById("noteBody").value.trim();
   if(!title){ toast("Give it a title"); return; }
   const tags = document.getElementById("noteTags").value.split(",").map(t=>t.trim()).filter(Boolean);
+  let noteId = noteEditingId;
   if(noteEditingId){
     const idx = state.notes.findIndex(n=>n.id===noteEditingId);
     if(idx>-1) state.notes[idx] = Object.assign({}, state.notes[idx], {title, body, category:noteCategory, tags, updatedAt:Date.now()});
     toast("Note updated");
   } else {
-    state.notes.push({ id:uid(), title, body, category:noteCategory, tags, createdAt:Date.now(), updatedAt:Date.now() });
+    noteId = uid();
+    state.notes.push({ id:noteId, title, body, category:noteCategory, tags, createdAt:Date.now(), updatedAt:Date.now() });
     toast("Note saved");
   }
+
+  // Schedule (or update/remove) the linked calendar entry directly from the
+  // note form, instead of requiring the note to be saved first.
+  const wantsReminder = document.getElementById("noteReminderToggle").checked;
+  const reminderDate = document.getElementById("noteReminderDate").value;
+  const reminderTime = document.getElementById("noteReminderTime").value;
+  if(wantsReminder && reminderDate){
+    if(noteReminderEventId){
+      const evIdx = state.calendarEvents.findIndex(ev=>ev.id===noteReminderEventId);
+      if(evIdx>-1) state.calendarEvents[evIdx] = Object.assign({}, state.calendarEvents[evIdx], {
+        title, date: reminderDate, allDay: !reminderTime, startTime: reminderTime||null
+      });
+    } else {
+      state.calendarEvents.push({
+        id:uid(), title, date: reminderDate, allDay: !reminderTime, startTime: reminderTime||null, endTime:null, notes:"",
+        sourceType:"note", sourceId:noteId
+      });
+    }
+  } else if(noteReminderEventId){
+    state.calendarEvents = state.calendarEvents.filter(ev=>ev.id!==noteReminderEventId);
+  }
+
   saveState();
   resetNoteForm();
   renderNotes();
+  if(document.getElementById("screen-calendar").classList.contains("active")) renderCalendar();
 });
 document.getElementById("noteSearch").addEventListener("input", renderNotes);
 document.getElementById("noteCategoryFilter").addEventListener("change", renderNotes);
@@ -4270,10 +4617,40 @@ function renderIngredientsEditor(){
 }
 document.getElementById("recipeAddIngredientBtn").addEventListener("click", ()=> openIngredientModal(null));
 
+function hmsToSeconds(h,m,s){
+  return (parseInt(h,10)||0)*3600 + (parseInt(m,10)||0)*60 + (parseInt(s,10)||0);
+}
+function secondsToHms(total){
+  total = Math.max(0, parseInt(total,10)||0);
+  return { h: Math.floor(total/3600), m: Math.floor((total%3600)/60), s: total%60 };
+}
+function fmtDurationShort(totalSeconds){
+  if(!totalSeconds) return "";
+  const {h,m,s} = secondsToHms(totalSeconds);
+  const parts = [];
+  if(h) parts.push(h+"h");
+  if(m) parts.push(m+"m");
+  if(s && !h) parts.push(s+"s");
+  return parts.length ? parts.join(" ") : "0m";
+}
+function setHmsFields(prefix, totalSeconds){
+  const {h,m,s} = secondsToHms(totalSeconds||0);
+  document.getElementById(prefix+"Hours").value = h || "";
+  document.getElementById(prefix+"Minutes").value = m || "";
+  document.getElementById(prefix+"Seconds").value = s || "";
+}
+function readHmsFields(prefix){
+  return hmsToSeconds(
+    document.getElementById(prefix+"Hours").value,
+    document.getElementById(prefix+"Minutes").value,
+    document.getElementById(prefix+"Seconds").value
+  );
+}
 function resetRecipeForm(){
   recipeEditingId = null;
   document.getElementById("recipeName").value = "";
-  document.getElementById("recipeCookTime").value = "";
+  setHmsFields("recipePrep", 0);
+  setHmsFields("recipeCook", 0);
   document.getElementById("recipeTags").value = "";
   document.getElementById("recipeInstructions").value = "";
   recipeIngredientsDraft = [];
@@ -4284,7 +4661,8 @@ function resetRecipeForm(){
 function loadRecipeIntoForm(r){
   recipeEditingId = r.id;
   document.getElementById("recipeName").value = r.name;
-  document.getElementById("recipeCookTime").value = r.cookTime||"";
+  setHmsFields("recipePrep", r.prepTimeSec||0);
+  setHmsFields("recipeCook", r.cookTimeSec||0);
   document.getElementById("recipeTags").value = (r.tags||[]).join(", ");
   document.getElementById("recipeInstructions").value = r.instructions||"";
   recipeIngredientsDraft = (r.ingredients||[]).map(i=>Object.assign({}, i));
@@ -4299,7 +4677,8 @@ document.getElementById("recipeModalBackdrop").addEventListener("click", (e)=>{ 
 document.getElementById("recipeSubmitBtn").addEventListener("click", ()=>{
   const name = document.getElementById("recipeName").value.trim();
   if(!name){ toast("Give it a name"); return; }
-  const cookTime = parseInt(document.getElementById("recipeCookTime").value,10) || null;
+  const prepTimeSec = readHmsFields("recipePrep") || null;
+  const cookTimeSec = readHmsFields("recipeCook") || null;
   const instructions = document.getElementById("recipeInstructions").value.trim();
   const tags = document.getElementById("recipeTags").value.split(",").map(t=>t.trim()).filter(Boolean);
   const ingredients = recipeIngredientsDraft.filter(i=>i.name.trim()).map(i=>({
@@ -4307,10 +4686,10 @@ document.getElementById("recipeSubmitBtn").addEventListener("click", ()=>{
   }));
   if(recipeEditingId){
     const idx = state.recipes.findIndex(r=>r.id===recipeEditingId);
-    if(idx>-1) state.recipes[idx] = Object.assign({}, state.recipes[idx], {name, cookTime, instructions, tags, ingredients});
+    if(idx>-1) state.recipes[idx] = Object.assign({}, state.recipes[idx], {name, prepTimeSec, cookTimeSec, instructions, tags, ingredients});
     toast("Recipe updated");
   } else {
-    state.recipes.push({ id:uid(), name, cookTime, instructions, tags, ingredients });
+    state.recipes.push({ id:uid(), name, prepTimeSec, cookTimeSec, instructions, tags, ingredients });
     toast("Recipe saved");
   }
   saveState();
@@ -4380,7 +4759,7 @@ function renderRecipes(){
     return `<div class="recipe-card">
       <div class="row">
         <div class="chore-name" data-edit-recipe="${r.id}">${escapeHtml(r.name)}</div>
-        <div class="stat-sub">${r.cookTime?r.cookTime+" min":""}</div>
+        <div class="stat-sub">${[r.prepTimeSec?("Prep "+fmtDurationShort(r.prepTimeSec)):"", r.cookTimeSec?("Cook "+fmtDurationShort(r.cookTimeSec)):""].filter(Boolean).join(" &middot; ")}</div>
       </div>
       ${tagsRow}
       <div class="stat-sub" style="margin:6px 0 10px;">${(r.ingredients||[]).length} ingredients &middot; ${missing} missing</div>
@@ -4571,6 +4950,62 @@ function generateMealPrepShoppingList(){
 document.getElementById("mealPrepGenerateShopBtn").addEventListener("click", generateMealPrepShoppingList);
 
 /* ================= DINING VENUES / DIRECTORY ================= */
+const VENUE_IMPORT_TEMPLATE = JSON.stringify([
+  {
+    placeName: "North Dining Hall",
+    hours: "8:00 AM - 8:00 PM",
+    tags: ["vegan", "gluten-free"],
+    menuItems: [
+      { name: "Grilled Chicken Bowl", cost: 8.5, notes: "gluten-free option available" },
+      { name: "Veggie Wrap", cost: 6.25, notes: "" }
+    ]
+  }
+], null, 2);
+document.getElementById("venueImportInfoBtn").addEventListener("click", ()=>{
+  document.getElementById("venueImportTemplateText").value = VENUE_IMPORT_TEMPLATE;
+  document.getElementById("venueImportInfoModalBackdrop").classList.add("open");
+});
+document.getElementById("venueImportInfoCloseBtn").addEventListener("click", ()=>{
+  document.getElementById("venueImportInfoModalBackdrop").classList.remove("open");
+});
+document.getElementById("venueImportInfoModalBackdrop").addEventListener("click", (e)=>{
+  if(e.target.id==="venueImportInfoModalBackdrop") document.getElementById("venueImportInfoModalBackdrop").classList.remove("open");
+});
+document.getElementById("venueImportCopyTemplateBtn").addEventListener("click", ()=>{
+  const ta = document.getElementById("venueImportTemplateText");
+  ta.select();
+  try{
+    document.execCommand("copy");
+    toast("Template copied");
+  }catch(e){
+    if(navigator.clipboard){ navigator.clipboard.writeText(ta.value); toast("Template copied"); }
+  }
+  window.getSelection().removeAllRanges();
+});
+// Best-effort parse of a 12h "8:00 AM" / "8:00AM" style time into 24h "08:00"
+// for the <input type="time"> fields; returns "" if it can't be parsed.
+function parseTimeTo24(str){
+  if(!str) return "";
+  const m = String(str).trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])?$/);
+  if(!m) return "";
+  let h = parseInt(m[1],10);
+  const mm = m[2];
+  const ap = m[3] ? m[3].toUpperCase() : null;
+  if(ap==="PM" && h!==12) h += 12;
+  if(ap==="AM" && h===12) h = 0;
+  if(h<0 || h>23) return "";
+  return pad(h)+":"+mm;
+}
+// Splits a free-text hours string like "8:00 AM - 8:00 PM" into {open, close}
+// 24h times. Falls back to leaving them blank if it can't be parsed, while
+// the original raw text is always preserved separately for display.
+function parseHoursString(str){
+  const parts = String(str).split(/\s*[-\u2013\u2014]\s*|\s+to\s+/i);
+  if(parts.length>=2){
+    return { open: parseTimeTo24(parts[0]), close: parseTimeTo24(parts[1]) };
+  }
+  return { open:"", close:"" };
+}
 document.getElementById("venueSubmitBtn").addEventListener("click", ()=>{
   const name = document.getElementById("venueName").value.trim();
   if(!name){ toast("Give it a name"); return; }
@@ -4600,9 +5035,26 @@ document.getElementById("venueImportBtn").addEventListener("click", ()=>{
     const existingNames = new Set(state.diningVenues.map(v=>v.name.toLowerCase()));
     let added = 0;
     arr.forEach(v=>{
-      if(!v.name || existingNames.has(v.name.toLowerCase())) return;
-      state.diningVenues.push({ id:uid(), name:v.name, open:v.open||"", close:v.close||"", tags:Array.isArray(v.tags)?v.tags:[] });
-      existingNames.add(v.name.toLowerCase());
+      const name = v.placeName || v.name;
+      if(!name || existingNames.has(name.toLowerCase())) return;
+      let open = v.open || "", close = v.close || "", hoursRaw = "";
+      if(v.hours){
+        if(typeof v.hours === "object"){
+          open = v.hours.open || open;
+          close = v.hours.close || close;
+        } else if(typeof v.hours === "string"){
+          hoursRaw = v.hours;
+          const parsed = parseHoursString(v.hours);
+          open = parsed.open || open;
+          close = parsed.close || close;
+        }
+      }
+      const menuItems = Array.isArray(v.menuItems) ? v.menuItems : [];
+      const meals = menuItems.filter(mi=>mi && mi.name).map(mi=>({
+        id:uid(), name:String(mi.name), cost: Number(mi.cost)||0, notes: mi.notes||""
+      }));
+      state.diningVenues.push({ id:uid(), name, open, close, hoursRaw, tags:Array.isArray(v.tags)?v.tags:[], meals });
+      existingNames.add(name.toLowerCase());
       added++;
     });
     saveState();
@@ -4687,7 +5139,7 @@ function renderVenues(){
         <div class="chore-name">${escapeHtml(v.name)}</div>
         <button class="link-btn" data-del-venue="${v.id}">Remove</button>
       </div>
-      <div class="venue-hours">${v.open?fmtTime12(v.open):'?'} &ndash; ${v.close?fmtTime12(v.close):'?'}</div>
+      <div class="venue-hours">${(v.open || v.close) ? (v.open?fmtTime12(v.open):'?') + ' \u2013 ' + (v.close?fmtTime12(v.close):'?') : (v.hoursRaw ? escapeHtml(v.hoursRaw) : 'Hours unknown')}</div>
       <div class="note-tags" style="margin-top:6px;">${(v.tags||[]).map(t=>`<span class="note-tag">${escapeHtml(t)}</span>`).join("")}</div>
       <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);">
         <div class="stat-label" style="margin-bottom:6px;">Meals at this spot</div>
